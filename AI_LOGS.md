@@ -675,4 +675,1329 @@
 
 ⏺ PLAN.md is now in the project root and pushed (4cf0dc2).
 
-✻ Baked for 32s
+✻ Baked for 32s╭─── Claude Code v2.1.128 ─────────────────────────────────────────────────────╮
+│                                                    │ Tips for getting        │
+│                 Welcome back nicho!                │ started                 │
+│                                                    │ Run /init to create a … │
+│                       ▐▛███▜▌                      │ ─────────────────────── │
+│                      ▝▜█████▛▘                     │ What's new              │
+│                        ▘▘ ▝▝                       │ Added new `claude agen… │
+│ Sonnet 4.6 · Claude Pro · nicho.delmo@gmail.com's  │ Fast mode now uses Opu… │
+│ Organization                                       │ Plugins with a root-le… │
+│         ~/Desktop/kaizen-take-home (2) (1)         │ /release-notes for more │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+❯ /clear                                                                        
+  ⎿  (no content)
+
+❯ working on adding a holiday discount to the app with the following            
+  requirements:                                                                 
+  A reservation that includes a holiday but does not start or end on that       
+  holiday                                                                       
+  should receive a 17% discount off the total price.                            
+  A reservation for more than 3 days should receive a $10/hr discount on the    
+  hourly rate.                                                                  
+  These discounts cannot both apply at the same time. If they conflict, the     
+  discount with the best price applies to the reservation.                      
+  Visitors should see the discount reflected during search and checkout,        
+  including on the review page.                                                 
+  Fictional holidays to work with: Jan 21, Feb 12, Mar 04, May 02, Jun 16, Jul  
+  26,                                                                           
+  Aug 03, Sep 01, Nov 05, Dec 18.                                               
+                                                                                
+  understand the requirements and the current state of the pricing and discount 
+   system. Consider a plan of implementation with test driven developments.     
+  Determine if any testing framework is configured in the repo, and construct   
+  tests that satisfy the requirements, then plan how to implement the product   
+  code.  Consider the optimal mode of execution and if we can parallelize the   
+  test generation and code execution at the same time either in subagent        
+  deployments or multiple claude sessions                                       
+
+⏺ I'll launch 3 parallel Explore agents to understand the codebase before
+  planning.
+
+⏺ 3 Explore agents finished (ctrl+o to expand)
+   ├ Explore project structure and testing framework · 18 tool uses · 33.0k tokens
+   │ ⎿  Done
+   ├ Explore pricing and discount system · 15 tool uses · 34.6k tokens
+   │ ⎿  Done
+   └ Explore search and checkout UI components · 21 tool uses · 36.8k tokens
+     ⎿  Done
+
+⏺ Good findings. Now let me read the critical files directly before designing
+  the plan.
+
+  Read 3 files (ctrl+o to expand)
+
+⏺ Now I have enough to design the plan. Let me read one more file and then write
+   the plan.
+
+  Read 2 files (ctrl+o to expand)
+
+⏺ Now I have everything I need. Writing the final plan.
+
+⏺ Updated plan
+  ⎿  /plan to preview
+  ⎿  User rejected Claude's plan:
+     ╭─────────────────────────────────────────────────────────────────────────╮
+     │ Holiday & Duration Discount Feature Plan                                │
+     │                                                                         │
+     │ Context                                                                 │
+     │                                                                         │
+     │ Kaizen Wheels has no discount system. We need to add two                │
+     │ mutually-exclusive discounts with a "best price wins" conflict rule,    │
+     │ and surface the discount on both the search results page and the        │
+     │ review/checkout page. The project has no testing infrastructure, so we  │
+     │ must install Vitest first and drive the implementation with tests.      │
+     │                                                                         │
+     │ Discount Rules (summary)                                                │
+     │                                                                         │
+     │ ┌──────────┬──────────────────────────────────────────┬──────────────── │
+     │ ───┐                                                                    │
+     │ │ Discount │                Condition                 │      Amount     │
+     │    │                                                                    │
+     │ ├──────────┼──────────────────────────────────────────┼──────────────── │
+     │ ───┤                                                                    │
+     │ │ Holiday  │ Reservation contains a holiday but does  │ 17% off total   │
+     │    │                                                                    │
+     │ │          │ not start or end on that holiday         │                 │
+     │    │                                                                    │
+     │ ├──────────┼──────────────────────────────────────────┼──────────────── │
+     │ ───┤                                                                    │
+     │ │ Duration │ Duration strictly > 3 days (> 72 hours)  │ $10/hr off      │
+     │ hourly │                                                                │
+     │ │          │                                          │  rate           │
+     │    │                                                                    │
+     │ ├──────────┼──────────────────────────────────────────┼──────────────── │
+     │ ───┤                                                                    │
+     │ │ Conflict │ Both apply                               │ Apply whichever │
+     │    │                                                                    │
+     │ │          │                                          │ saves more      │
+     │    │                                                                    │
+     │ └──────────┴──────────────────────────────────────────┴──────────────── │
+     │ ───┘                                                                    │
+     │                                                                         │
+     │ Holidays (month/day, any year): Jan 21, Feb 12, Mar 04, May 02, Jun 16, │
+     │  Jul 26, Aug 03, Sep 01, Nov 05, Dec 18.                                │
+     │                                                                         │
+     │ "Includes a holiday but does not start or end on it" means there exists │
+     │  a holiday H where:                                                     │
+     │ start.startOf('day') < H.startOf('day') < end.startOf('day') (strict —  │
+     │ not on start or end calendar day).                                      │
+     │                                                                         │
+     │ ---                                                                     │
+     │ Parallelization Assessment                                              │
+     │                                                                         │
+     │ After the shared interface is defined (Step 3), two independent streams │
+     │  can run in parallel via git worktrees or separate Claude sessions:     │
+     │ - Stream A: Implement discounts.ts + update api.ts                      │
+     │ - Stream B: Update VehicleListItem.tsx + ReviewPage.tsx (imports from   │
+     │ discounts.ts by agreed interface)                                       │
+     │                                                                         │
+     │ In a single session, execution is sequential. Worktrees are the correct │
+     │  tool for true parallelism since both streams write different files.    │
+     │                                                                         │
+     │ ---                                                                     │
+     │ Step-by-Step Implementation                                             │
+     │                                                                         │
+     │ Step 1 — Install Vitest                                                 │
+     │                                                                         │
+     │ npm install -D vitest @vitest/coverage-v8                               │
+     │                                                                         │
+     │ Create vitest.config.ts (project root):                                 │
+     │ import { defineConfig } from "vitest/config";                           │
+     │ export default defineConfig({                                           │
+     │   test: { environment: "node" },                                        │
+     │ });                                                                     │
+     │                                                                         │
+     │ Add to package.json scripts:                                            │
+     │ "test": "vitest run",                                                   │
+     │ "test:watch": "vitest"                                                  │
+     │                                                                         │
+     │ ---                                                                     │
+     │ Step 2 — Create app/lib/discounts.ts (skeleton with types first)        │
+     │                                                                         │
+     │ This is the shared interface both streams depend on.                    │
+     │                                                                         │
+     │ import { DateTime } from "luxon";                                       │
+     │                                                                         │
+     │ export const HOLIDAYS = [                                               │
+     │   { month: 1, day: 21 }, { month: 2, day: 12 }, { month: 3, day: 4 },   │
+     │   { month: 5, day: 2 },  { month: 6, day: 16 }, { month: 7, day: 26 },  │
+     │   { month: 8, day: 3 },  { month: 9, day: 1 },  { month: 11, day: 5 },  │
+     │   { month: 12, day: 18 },                                               │
+     │ ] as const;                                                             │
+     │                                                                         │
+     │ export type DiscountType = "holiday" | "duration" | null;               │
+     │                                                                         │
+     │ export interface DiscountInfo {                                         │
+     │   discountType: DiscountType;                                           │
+     │   effectiveTotalPriceCents: number;                                     │
+     │   savingsCents: number;                                                 │
+     │ }                                                                       │
+     │                                                                         │
+     │ // hasHolidayInRange: true if any holiday falls strictly between start  │
+     │ day and end day                                                         │
+     │ export function hasHolidayInRange(start: DateTime, end: DateTime):      │
+     │ boolean                                                                 │
+     │                                                                         │
+     │ // hasDurationDiscount: true if durationInHours > 72                    │
+     │ export function hasDurationDiscount(durationInHours: number): boolean   │
+     │                                                                         │
+     │ // calculateDiscount: resolves which discount applies (or neither)      │
+     │ export function calculateDiscount(                                      │
+     │   start: DateTime,                                                      │
+     │   end: DateTime,                                                        │
+     │   hourlyRateCents: number,                                              │
+     │   durationInHours: number,                                              │
+     │ ): DiscountInfo                                                         │
+     │                                                                         │
+     │ ---                                                                     │
+     │ Step 3 — Write tests (app/lib/__tests__/discounts.test.ts)              │
+     │                                                                         │
+     │ hasHolidayInRange tests:                                                │
+     │ - Jan 20 → Jan 22 includes Jan 21 strictly → true                       │
+     │ - Jan 21 (00:00) → Jan 22 starts on holiday → false                     │
+     │ - Jan 20 → Jan 21 (23:59) ends on holiday → false                       │
+     │ - Jan 22 → Jan 24 no holiday → false                                    │
+     │ - Dec 15 → Dec 20 includes Dec 18 → true                                │
+     │ - Multi-year: Dec 31 → Jan 22 next year includes Jan 21 → true          │
+     │                                                                         │
+     │ hasDurationDiscount tests:                                              │
+     │ - 72 hours exactly → false                                              │
+     │ - 72.001 hours → true                                                   │
+     │ - 48 hours → false                                                      │
+     │ - 96 hours (4 days) → true                                              │
+     │                                                                         │
+     │ calculateDiscount tests:                                                │
+     │ - Only holiday applies: savings = baseTotalCents * 0.17, type =         │
+     │ "holiday"                                                               │
+     │ - Only duration applies: savings = 1000 * durationInHours cents, type = │
+     │  "duration"                                                             │
+     │ - Both apply, holiday saves more → type = "holiday",                    │
+     │ effectiveTotalPriceCents is lower of two                                │
+     │ - Both apply, duration saves more → type = "duration"                   │
+     │ - Both same savings → consistent choice (either, document which)        │
+     │ - Neither applies → type = null, savingsCents = 0,                      │
+     │ effectiveTotalPriceCents = base                                         │
+     │                                                                         │
+     │ ---                                                                     │
+     │ Step 4 — Implement discounts.ts                                         │
+     │                                                                         │
+     │ Fill in the function bodies to make all tests pass. Key logic:          │
+     │                                                                         │
+     │ export function hasHolidayInRange(start: DateTime, end: DateTime):      │
+     │ boolean {                                                               │
+     │   const startDay = start.startOf("day");                                │
+     │   const endDay = end.startOf("day");                                    │
+     │   for (const { month, day } of HOLIDAYS) {                              │
+     │     for (const year of new Set([start.year, end.year])) {               │
+     │       const h = DateTime.fromObject({ year, month, day });              │
+     │       if (h > startDay && h < endDay) return true;                      │
+     │     }                                                                   │
+     │   }                                                                     │
+     │   return false;                                                         │
+     │ }                                                                       │
+     │                                                                         │
+     │ export function hasDurationDiscount(durationInHours: number): boolean { │
+     │   return durationInHours > 72;                                          │
+     │ }                                                                       │
+     │                                                                         │
+     │ export function calculateDiscount(                                      │
+     │   start, end, hourlyRateCents, durationInHours                          │
+     │ ): DiscountInfo {                                                       │
+     │   const baseTotalCents = hourlyRateCents * durationInHours;             │
+     │                                                                         │
+     │   const holidaySavings = hasHolidayInRange(start, end)                  │
+     │     ? Math.round(baseTotalCents * 0.17)                                 │
+     │     : null;                                                             │
+     │   const durationSavings = hasDurationDiscount(durationInHours)          │
+     │     ? 1000 * durationInHours   // $10/hr in cents                       │
+     │     : null;                                                             │
+     │                                                                         │
+     │   let best = { savings: 0, type: null as DiscountType };                │
+     │   if (holidaySavings !== null && (durationSavings === null ||           │
+     │ holidaySavings >= durationSavings)) {                                   │
+     │     best = { savings: holidaySavings, type: "holiday" };                │
+     │   } else if (durationSavings !== null) {                                │
+     │     best = { savings: durationSavings, type: "duration" };              │
+     │   }                                                                     │
+     │                                                                         │
+     │   return {                                                              │
+     │     discountType: best.type,                                            │
+     │     effectiveTotalPriceCents: baseTotalCents - best.savings,            │
+     │     savingsCents: best.savings,                                         │
+     │   };                                                                    │
+     │ }                                                                       │
+     │                                                                         │
+     │ ---                                                                     │
+     │ Step 5 — Update app/server/api.ts                                       │
+     │                                                                         │
+     │ Extend calculateTotalPrice return type and wire in discounts:           │
+     │                                                                         │
+     │ import { calculateDiscount, DiscountInfo } from "@/lib/discounts";      │
+     │                                                                         │
+     │ interface PriceQuote {                                                  │
+     │   totalPriceCents: number;                                              │
+     │   hourlyRateCents: number;                                              │
+     │   durationInHours: number;                                              │
+     │   discount: DiscountInfo;                                               │
+     │ }                                                                       │
+     │                                                                         │
+     │ const calculateTotalPrice = (                                           │
+     │   start: DateTime, end: DateTime, hourlyRateCents: number               │
+     │ ): PriceQuote => {                                                      │
+     │   const durationInHours = end.diff(start, "hours").hours || 0;          │
+     │   const discount = calculateDiscount(start, end, hourlyRateCents,       │
+     │ durationInHours);                                                       │
+     │   return {                                                              │
+     │     totalPriceCents: hourlyRateCents * durationInHours, // original     │
+     │ (pre-discount)                                                          │
+     │     hourlyRateCents,                                                    │
+     │     durationInHours,                                                    │
+     │     discount,                                                           │
+     │   };                                                                    │
+     │ };                                                                      │
+     │                                                                         │
+     │ getQuote already calls calculateTotalPrice — no changes needed there.   │
+     │                                                                         │
+     │ ---                                                                     │
+     │ Step 6 — Update app/components/search/VehicleListItem.tsx               │
+     │                                                                         │
+     │ VehicleListItem already receives startDateTime and endDateTime. Import  │
+     │ calculateDiscount from discounts.ts and compute inline:                 │
+     │                                                                         │
+     │ import { DateTime } from "luxon";                                       │
+     │ import { calculateDiscount } from "@/lib/discounts";                    │
+     │                                                                         │
+     │ // Inside component:                                                    │
+     │ const durationInHours = (endDateTime.getTime() -                        │
+     │ startDateTime.getTime()) / 3_600_000;                                   │
+     │ const discount = calculateDiscount(                                     │
+     │   DateTime.fromJSDate(startDateTime),                                   │
+     │   DateTime.fromJSDate(endDateTime),                                     │
+     │   vehicle.hourly_rate_cents,                                            │
+     │   durationInHours,                                                      │
+     │ );                                                                      │
+     │                                                                         │
+     │ Display changes:                                                        │
+     │ - If discount.discountType !== null: show a colored badge ("Holiday     │
+     │ Deal" or "Multi-Day Discount") and effective total for the selected     │
+     │ range                                                                   │
+     │ - Show original /hr rate with a strikethrough if duration discount      │
+     │ applies (since it changes effective hourly rate)                        │
+     │ - Keep the existing /hr display unchanged if no discount                │
+     │                                                                         │
+     │ ---                                                                     │
+     │ Step 7 — Update app/components/review/ReviewPage.tsx                    │
+     │                                                                         │
+     │ Use quote.discount from API.getQuote():                                 │
+     │                                                                         │
+     │ Add to the Reservation Summary <dl>:                                    │
+     │ {quote.discount.discountType !== null && (                              │
+     │   <>                                                                    │
+     │     <div>                                                               │
+     │       <dt className="text-sm text-gray-600">Subtotal</dt>               │
+     │       <dd>{formatCents(quote.totalPriceCents)}</dd>                     │
+     │     </div>                                                              │
+     │     <div>                                                               │
+     │       <dt className="text-sm text-green-600">                           │
+     │         {quote.discount.discountType === "holiday" ? "Holiday Discount  │
+     │ (17%)" : "Multi-Day Discount ($10/hr)"}                                 │
+     │       </dt>                                                             │
+     │       <dd className="text-green-600">−{formatCents(quote.discount.savin │
+     │ gsCents)}</dd>                                                          │
+     │     </div>                                                              │
+     │   </>                                                                   │
+     │ )}                                                                      │
+     │ <div>                                                                   │
+     │   <dt className="text-sm text-gray-600">Total Cost</dt>                 │
+     │   <dd className="text-2xl font-medium tracking-tight">                  │
+     │     {formatCents(quote.discount.effectiveTotalPriceCents)}              │
+     │   </dd>                                                                 │
+     │ </div>                                                                  │
+     │                                                                         │
+     │ ---                                                                     │
+     │ Critical Files                                                          │
+     │                                                                         │
+     │ ┌───────────────────────────────────────────┬────────────────────────── │
+     │ ────┐                                                                   │
+     │ │                   File                    │            Change         │
+     │     │                                                                   │
+     │ ├───────────────────────────────────────────┼────────────────────────── │
+     │ ────┤                                                                   │
+     │ │ package.json                              │ Add vitest                │
+     │ devDependencies + │                                                     │
+     │ │                                           │  test scripts             │
+     │     │                                                                   │
+     │ ├───────────────────────────────────────────┼────────────────────────── │
+     │ ────┤                                                                   │
+     │ │ vitest.config.ts                          │ New — Vitest config       │
+     │     │                                                                   │
+     │ ├───────────────────────────────────────────┼────────────────────────── │
+     │ ────┤                                                                   │
+     │ │ app/lib/discounts.ts                      │ New — pure discount logic │
+     │     │                                                                   │
+     │ ├───────────────────────────────────────────┼────────────────────────── │
+     │ ────┤                                                                   │
+     │ │ app/lib/__tests__/discounts.test.ts       │ New — unit tests          │
+     │     │                                                                   │
+     │ ├───────────────────────────────────────────┼────────────────────────── │
+     │ ────┤                                                                   │
+     │ │ app/server/api.ts                         │ Extend return type of     │
+     │     │                                                                   │
+     │ │                                           │                           │
+     │ calculateTotalPrice/getQuote │                                          │
+     │ ├───────────────────────────────────────────┼────────────────────────── │
+     │ ────┤                                                                   │
+     │ │ app/components/review/ReviewPage.tsx      │ Add discount line items   │
+     │     │                                                                   │
+     │ ├───────────────────────────────────────────┼────────────────────────── │
+     │ ────┤                                                                   │
+     │ │ app/components/search/VehicleListItem.tsx │ Add discount badge +      │
+     │     │                                                                   │
+     │ │                                           │ effective pricing         │
+     │     │                                                                   │
+     │ └───────────────────────────────────────────┴────────────────────────── │
+     │ ────┘                                                                   │
+     │                                                                         │
+     │ Verification                                                            │
+     │                                                                         │
+     │ 1. npm test — all discount unit tests pass                              │
+     │ 2. npm run ts — no TypeScript errors                                    │
+     │ 3. Start dev server (npm run dev) and manually verify:                  │
+     │   - Search with a date range crossing a holiday (e.g. Jan 20 → Jan 22): │
+     │  badge + discount shows                                                 │
+     │   - Search with start = Jan 21: no holiday discount                     │
+     │   - Search with a 4-day range on a non-holiday week: multi-day discount │
+     │  shows                                                                  │
+     │   - Search with a 4-day range crossing a holiday: only the better       │
+     │ discount shows                                                          │
+     │   - Click "Book now" → review page shows discount line and correct      │
+     │ discounted total                                                        │
+     │   - Short range with no holiday: no discount shown anywhere             │
+     ╰─────────────────────────────────────────────────────────────────────────╯
+
+❯ is installing the vitest necessary, can we craft simple unit tests to         
+  accurately capture functional behavior without installing another dependency? 
+
+⏺ Good call. The project already has tsx installed, and Node.js 18+ ships a
+  built-in test runner (node:test) and assertion module (node:assert) — no extra
+   dependencies needed.
+
+  The test script becomes:
+  node --import tsx/esm --test 'app/lib/__tests__/**/*.test.ts'
+
+  And test files use:
+  import { test, describe } from "node:test";
+  import assert from "node:assert/strict";
+
+  I'll update the plan to remove Vitest and use this approach instead.
+
+⏺ Updated plan
+  ⎿  /plan to preview
+
+⏺ Updated plan
+  ⎿  /plan to preview
+
+⏺ Updated plan
+  ⎿  /plan to preview
+
+⏺ Plan updated. The only change to Step 1 is adding one line to package.json
+  scripts — no npm install, no config file, no new dependencies.
+
+  Ready to proceed?
+  ⎿  User rejected Claude's plan:
+     ╭─────────────────────────────────────────────────────────────────────────╮
+     │ Holiday & Duration Discount Feature Plan                                │
+     │                                                                         │
+     │ Context                                                                 │
+     │                                                                         │
+     │ Kaizen Wheels has no discount system. We need to add two                │
+     │ mutually-exclusive discounts with a "best price wins" conflict rule,    │
+     │ and surface the discount on both the search results page and the        │
+     │ review/checkout page. The project has no testing infrastructure, so we  │
+     │ must install Vitest first and drive the implementation with tests.      │
+     │                                                                         │
+     │ Discount Rules (summary)                                                │
+     │                                                                         │
+     │ ┌──────────┬──────────────────────────────────────────┬──────────────── │
+     │ ───┐                                                                    │
+     │ │ Discount │                Condition                 │      Amount     │
+     │    │                                                                    │
+     │ ├──────────┼──────────────────────────────────────────┼──────────────── │
+     │ ───┤                                                                    │
+     │ │ Holiday  │ Reservation contains a holiday but does  │ 17% off total   │
+     │    │                                                                    │
+     │ │          │ not start or end on that holiday         │                 │
+     │    │                                                                    │
+     │ ├──────────┼──────────────────────────────────────────┼──────────────── │
+     │ ───┤                                                                    │
+     │ │ Duration │ Duration strictly > 3 days (> 72 hours)  │ $10/hr off      │
+     │ hourly │                                                                │
+     │ │          │                                          │  rate           │
+     │    │                                                                    │
+     │ ├──────────┼──────────────────────────────────────────┼──────────────── │
+     │ ───┤                                                                    │
+     │ │ Conflict │ Both apply                               │ Apply whichever │
+     │    │                                                                    │
+     │ │          │                                          │ saves more      │
+     │    │                                                                    │
+     │ └──────────┴──────────────────────────────────────────┴──────────────── │
+     │ ───┘                                                                    │
+     │                                                                         │
+     │ Holidays (month/day, any year): Jan 21, Feb 12, Mar 04, May 02, Jun 16, │
+     │  Jul 26, Aug 03, Sep 01, Nov 05, Dec 18.                                │
+     │                                                                         │
+     │ "Includes a holiday but does not start or end on it" means there exists │
+     │  a holiday H where:                                                     │
+     │ start.startOf('day') < H.startOf('day') < end.startOf('day') (strict —  │
+     │ not on start or end calendar day).                                      │
+     │                                                                         │
+     │ ---                                                                     │
+     │ Parallelization Assessment                                              │
+     │                                                                         │
+     │ After the shared interface is defined (Step 3), two independent streams │
+     │  can run in parallel via git worktrees or separate Claude sessions:     │
+     │ - Stream A: Implement discounts.ts + update api.ts                      │
+     │ - Stream B: Update VehicleListItem.tsx + ReviewPage.tsx (imports from   │
+     │ discounts.ts by agreed interface)                                       │
+     │                                                                         │
+     │ In a single session, execution is sequential. Worktrees are the correct │
+     │  tool for true parallelism since both streams write different files.    │
+     │                                                                         │
+     │ ---                                                                     │
+     │ Step-by-Step Implementation                                             │
+     │                                                                         │
+     │ Step 1 — Add test script (zero new dependencies)                        │
+     │                                                                         │
+     │ Node.js 18+ ships node:test and node:assert built-in. tsx is already a  │
+     │ devDependency. No installs needed.                                      │
+     │                                                                         │
+     │ Add to package.json scripts only:                                       │
+     │ "test": "node --import tsx/esm --test 'app/lib/__tests__/**/*.test.ts'" │
+     │                                                                         │
+     │ Test files use the built-in runner:                                     │
+     │ import { test, describe } from "node:test";                             │
+     │ import assert from "node:assert/strict";                                │
+     │                                                                         │
+     │ ---                                                                     │
+     │ Step 2 — Create app/lib/discounts.ts (skeleton with types first)        │
+     │                                                                         │
+     │ This is the shared interface both streams depend on.                    │
+     │                                                                         │
+     │ import { DateTime } from "luxon";                                       │
+     │                                                                         │
+     │ export const HOLIDAYS = [                                               │
+     │   { month: 1, day: 21 }, { month: 2, day: 12 }, { month: 3, day: 4 },   │
+     │   { month: 5, day: 2 },  { month: 6, day: 16 }, { month: 7, day: 26 },  │
+     │   { month: 8, day: 3 },  { month: 9, day: 1 },  { month: 11, day: 5 },  │
+     │   { month: 12, day: 18 },                                               │
+     │ ] as const;                                                             │
+     │                                                                         │
+     │ export type DiscountType = "holiday" | "duration" | null;               │
+     │                                                                         │
+     │ export interface DiscountInfo {                                         │
+     │   discountType: DiscountType;                                           │
+     │   effectiveTotalPriceCents: number;                                     │
+     │   savingsCents: number;                                                 │
+     │ }                                                                       │
+     │                                                                         │
+     │ // hasHolidayInRange: true if any holiday falls strictly between start  │
+     │ day and end day                                                         │
+     │ export function hasHolidayInRange(start: DateTime, end: DateTime):      │
+     │ boolean                                                                 │
+     │                                                                         │
+     │ // hasDurationDiscount: true if durationInHours > 72                    │
+     │ export function hasDurationDiscount(durationInHours: number): boolean   │
+     │                                                                         │
+     │ // calculateDiscount: resolves which discount applies (or neither)      │
+     │ export function calculateDiscount(                                      │
+     │   start: DateTime,                                                      │
+     │   end: DateTime,                                                        │
+     │   hourlyRateCents: number,                                              │
+     │   durationInHours: number,                                              │
+     │ ): DiscountInfo                                                         │
+     │                                                                         │
+     │ ---                                                                     │
+     │ Step 3 — Write tests (app/lib/__tests__/discounts.test.ts)              │
+     │                                                                         │
+     │ hasHolidayInRange tests:                                                │
+     │ - Jan 20 → Jan 22 includes Jan 21 strictly → true                       │
+     │ - Jan 21 (00:00) → Jan 22 starts on holiday → false                     │
+     │ - Jan 20 → Jan 21 (23:59) ends on holiday → false                       │
+     │ - Jan 22 → Jan 24 no holiday → false                                    │
+     │ - Dec 15 → Dec 20 includes Dec 18 → true                                │
+     │ - Multi-year: Dec 31 → Jan 22 next year includes Jan 21 → true          │
+     │                                                                         │
+     │ hasDurationDiscount tests:                                              │
+     │ - 72 hours exactly → false                                              │
+     │ - 72.001 hours → true                                                   │
+     │ - 48 hours → false                                                      │
+     │ - 96 hours (4 days) → true                                              │
+     │                                                                         │
+     │ calculateDiscount tests:                                                │
+     │ - Only holiday applies: savings = baseTotalCents * 0.17, type =         │
+     │ "holiday"                                                               │
+     │ - Only duration applies: savings = 1000 * durationInHours cents, type = │
+     │  "duration"                                                             │
+     │ - Both apply, holiday saves more → type = "holiday",                    │
+     │ effectiveTotalPriceCents is lower of two                                │
+     │ - Both apply, duration saves more → type = "duration"                   │
+     │ - Both same savings → consistent choice (either, document which)        │
+     │ - Neither applies → type = null, savingsCents = 0,                      │
+     │ effectiveTotalPriceCents = base                                         │
+     │                                                                         │
+     │ ---                                                                     │
+     │ Step 4 — Implement discounts.ts                                         │
+     │                                                                         │
+     │ Fill in the function bodies to make all tests pass. Key logic:          │
+     │                                                                         │
+     │ export function hasHolidayInRange(start: DateTime, end: DateTime):      │
+     │ boolean {                                                               │
+     │   const startDay = start.startOf("day");                                │
+     │   const endDay = end.startOf("day");                                    │
+     │   for (const { month, day } of HOLIDAYS) {                              │
+     │     for (const year of new Set([start.year, end.year])) {               │
+     │       const h = DateTime.fromObject({ year, month, day });              │
+     │       if (h > startDay && h < endDay) return true;                      │
+     │     }                                                                   │
+     │   }                                                                     │
+     │   return false;                                                         │
+     │ }                                                                       │
+     │                                                                         │
+     │ export function hasDurationDiscount(durationInHours: number): boolean { │
+     │   return durationInHours > 72;                                          │
+     │ }                                                                       │
+     │                                                                         │
+     │ export function calculateDiscount(                                      │
+     │   start, end, hourlyRateCents, durationInHours                          │
+     │ ): DiscountInfo {                                                       │
+     │   const baseTotalCents = hourlyRateCents * durationInHours;             │
+     │                                                                         │
+     │   const holidaySavings = hasHolidayInRange(start, end)                  │
+     │     ? Math.round(baseTotalCents * 0.17)                                 │
+     │     : null;                                                             │
+     │   const durationSavings = hasDurationDiscount(durationInHours)          │
+     │     ? 1000 * durationInHours   // $10/hr in cents                       │
+     │     : null;                                                             │
+     │                                                                         │
+     │   let best = { savings: 0, type: null as DiscountType };                │
+     │   if (holidaySavings !== null && (durationSavings === null ||           │
+     │ holidaySavings >= durationSavings)) {                                   │
+     │     best = { savings: holidaySavings, type: "holiday" };                │
+     │   } else if (durationSavings !== null) {                                │
+     │     best = { savings: durationSavings, type: "duration" };              │
+     │   }                                                                     │
+     │                                                                         │
+     │   return {                                                              │
+     │     discountType: best.type,                                            │
+     │     effectiveTotalPriceCents: baseTotalCents - best.savings,            │
+     │     savingsCents: best.savings,                                         │
+     │   };                                                                    │
+     │ }                                                                       │
+     │                                                                         │
+     │ ---                                                                     │
+     │ Step 5 — Update app/server/api.ts                                       │
+     │                                                                         │
+     │ Extend calculateTotalPrice return type and wire in discounts:           │
+     │                                                                         │
+     │ import { calculateDiscount, DiscountInfo } from "@/lib/discounts";      │
+     │                                                                         │
+     │ interface PriceQuote {                                                  │
+     │   totalPriceCents: number;                                              │
+     │   hourlyRateCents: number;                                              │
+     │   durationInHours: number;                                              │
+     │   discount: DiscountInfo;                                               │
+     │ }                                                                       │
+     │                                                                         │
+     │ const calculateTotalPrice = (                                           │
+     │   start: DateTime, end: DateTime, hourlyRateCents: number               │
+     │ ): PriceQuote => {                                                      │
+     │   const durationInHours = end.diff(start, "hours").hours || 0;          │
+     │   const discount = calculateDiscount(start, end, hourlyRateCents,       │
+     │ durationInHours);                                                       │
+     │   return {                                                              │
+     │     totalPriceCents: hourlyRateCents * durationInHours, // original     │
+     │ (pre-discount)                                                          │
+     │     hourlyRateCents,                                                    │
+     │     durationInHours,                                                    │
+     │     discount,                                                           │
+     │   };                                                                    │
+     │ };                                                                      │
+     │                                                                         │
+     │ getQuote already calls calculateTotalPrice — no changes needed there.   │
+     │                                                                         │
+     │ ---                                                                     │
+     │ Step 6 — Update app/components/search/VehicleListItem.tsx               │
+     │                                                                         │
+     │ VehicleListItem already receives startDateTime and endDateTime. Import  │
+     │ calculateDiscount from discounts.ts and compute inline:                 │
+     │                                                                         │
+     │ import { DateTime } from "luxon";                                       │
+     │ import { calculateDiscount } from "@/lib/discounts";                    │
+     │                                                                         │
+     │ // Inside component:                                                    │
+     │ const durationInHours = (endDateTime.getTime() -                        │
+     │ startDateTime.getTime()) / 3_600_000;                                   │
+     │ const discount = calculateDiscount(                                     │
+     │   DateTime.fromJSDate(startDateTime),                                   │
+     │   DateTime.fromJSDate(endDateTime),                                     │
+     │   vehicle.hourly_rate_cents,                                            │
+     │   durationInHours,                                                      │
+     │ );                                                                      │
+     │                                                                         │
+     │ Display changes:                                                        │
+     │ - If discount.discountType !== null: show a colored badge ("Holiday     │
+     │ Deal" or "Multi-Day Discount") and effective total for the selected     │
+     │ range                                                                   │
+     │ - Show original /hr rate with a strikethrough if duration discount      │
+     │ applies (since it changes effective hourly rate)                        │
+     │ - Keep the existing /hr display unchanged if no discount                │
+     │                                                                         │
+     │ ---                                                                     │
+     │ Step 7 — Update app/components/review/ReviewPage.tsx                    │
+     │                                                                         │
+     │ Use quote.discount from API.getQuote():                                 │
+     │                                                                         │
+     │ Add to the Reservation Summary <dl>:                                    │
+     │ {quote.discount.discountType !== null && (                              │
+     │   <>                                                                    │
+     │     <div>                                                               │
+     │       <dt className="text-sm text-gray-600">Subtotal</dt>               │
+     │       <dd>{formatCents(quote.totalPriceCents)}</dd>                     │
+     │     </div>                                                              │
+     │     <div>                                                               │
+     │       <dt className="text-sm text-green-600">                           │
+     │         {quote.discount.discountType === "holiday" ? "Holiday Discount  │
+     │ (17%)" : "Multi-Day Discount ($10/hr)"}                                 │
+     │       </dt>                                                             │
+     │       <dd className="text-green-600">−{formatCents(quote.discount.savin │
+     │ gsCents)}</dd>                                                          │
+     │     </div>                                                              │
+     │   </>                                                                   │
+     │ )}                                                                      │
+     │ <div>                                                                   │
+     │   <dt className="text-sm text-gray-600">Total Cost</dt>                 │
+     │   <dd className="text-2xl font-medium tracking-tight">                  │
+     │     {formatCents(quote.discount.effectiveTotalPriceCents)}              │
+     │   </dd>                                                                 │
+     │ </div>                                                                  │
+     │                                                                         │
+     │ ---                                                                     │
+     │ Critical Files                                                          │
+     │                                                                         │
+     │ ┌───────────────────────────────────────────┬────────────────────────── │
+     │ ────┐                                                                   │
+     │ │                   File                    │            Change         │
+     │     │                                                                   │
+     │ ├───────────────────────────────────────────┼────────────────────────── │
+     │ ────┤                                                                   │
+     │ │ package.json                              │ Add test script (no new   │
+     │     │                                                                   │
+     │ │                                           │ installs)                 │
+     │     │                                                                   │
+     │ ├───────────────────────────────────────────┼────────────────────────── │
+     │ ────┤                                                                   │
+     │ │ app/lib/discounts.ts                      │ New — pure discount logic │
+     │     │                                                                   │
+     │ ├───────────────────────────────────────────┼────────────────────────── │
+     │ ────┤                                                                   │
+     │ │ app/lib/__tests__/discounts.test.ts       │ New — unit tests          │
+     │     │                                                                   │
+     │ ├───────────────────────────────────────────┼────────────────────────── │
+     │ ────┤                                                                   │
+     │ │ app/server/api.ts                         │ Extend return type of     │
+     │     │                                                                   │
+     │ │                                           │                           │
+     │ calculateTotalPrice/getQuote │                                          │
+     │ ├───────────────────────────────────────────┼────────────────────────── │
+     │ ────┤                                                                   │
+     │ │ app/components/review/ReviewPage.tsx      │ Add discount line items   │
+     │     │                                                                   │
+     │ ├───────────────────────────────────────────┼────────────────────────── │
+     │ ────┤                                                                   │
+     │ │ app/components/search/VehicleListItem.tsx │ Add discount badge +      │
+     │     │                                                                   │
+     │ │                                           │ effective pricing         │
+     │     │                                                                   │
+     │ └───────────────────────────────────────────┴────────────────────────── │
+     │ ────┘                                                                   │
+     │                                                                         │
+     │ Verification                                                            │
+     │                                                                         │
+     │ 1. npm test — all discount unit tests pass (Node built-in runner, no    │
+     │ install needed)                                                         │
+     │ 2. npm run ts — no TypeScript errors                                    │
+     │ 3. Start dev server (npm run dev) and manually verify:                  │
+     │   - Search with a date range crossing a holiday (e.g. Jan 20 → Jan 22): │
+     │  badge + discount shows                                                 │
+     │   - Search with start = Jan 21: no holiday discount                     │
+     │   - Search with a 4-day range on a non-holiday week: multi-day discount │
+     │  shows                                                                  │
+     │   - Search with a 4-day range crossing a holiday: only the better       │
+     │ discount shows                                                          │
+     │   - Click "Book now" → review page shows discount line and correct      │
+     │ discounted total                                                        │
+     │   - Short range with no holiday: no discount shown anywhere             │
+     ╰─────────────────────────────────────────────────────────────────────────╯
+
+❯ /effort                                                                       
+  ⎿  Set effort level to max (this session only): Maximum capability with deepest
+      reasoning
+
+❯ Critique your plan, consider optimizations for testing, the discount system   
+  architecture and the execution method in parallel workstreams                 
+
+  Read 1 file (ctrl+o to expand)
+⏺ Good — here's my honest critique before revising:
+
+  Bugs in the current plan:
+
+  1. hasHolidayInRange year iteration is wrong — new Set([start.year, end.year])
+   only checks 2 years. A reservation spanning e.g. Dec 2024 → Feb 2026 silently
+   skips all of 2025's holidays. Should iterate every year from start.year to
+  end.year inclusive.
+  2. Test glob won't work on Node 18/20 — --test 
+  'app/lib/__tests__/**/*.test.ts' glob expansion requires Node 21+. Node 18 and
+   20 need explicit file paths.
+  3. Holiday discount in search list is misleading — The plan says "show
+  effective total for selected range" but VehicleListItem only currently shows
+  /hr. The holiday discount is 17% off total — there's no clean way to fold that
+   into a per-hour display. The duration discount ($10/hr) can be shown as a
+  reduced rate, but holiday discount should surface as a badge + estimated-total
+   line. These require different display treatments. The plan conflates them.
+  4. Tie-breaking undefined in tests — "consistent choice (either, document
+  which)" leaves a test unresolvable. The conflict rule needs to be declared:
+  holiday wins on tie (savings equal).
+  5. Parallelization section is hand-wavy — "via git worktrees" with no concrete
+   breakdown of which files go where, and no defined prerequisite that unlocks
+  the split.
+  6. durationSavings not clamped — 1000 * durationInHours could theoretically
+  exceed base total for hypothetical cheap vehicles. Defensive Math.max(0, ...)
+  guard is missing.
+  7. Missing test cases — no test for multiple holidays inside one range (should
+   still yield a single holiday discount, not stack), no test for reservation
+  spanning midnight of a holiday day.
+
+  Rewriting the plan now with all of these addressed.
+
+⏺ Updated plan
+  ⎿  /plan to preview
+  ⎿  User rejected Claude's plan:
+     ╭─────────────────────────────────────────────────────────────────────────╮
+     │ Holiday & Duration Discount Feature Plan                                │
+     │                                                                         │
+     │ Context                                                                 │
+     │                                                                         │
+     │ Kaizen Wheels needs two discounts with a "best price wins" conflict     │
+     │ rule. No discount system exists today. No testing infrastructure exists │
+     │  — we use Node.js built-in node:test + node:assert with the             │
+     │ already-installed tsx devDependency. Zero new installs needed.          │
+     │                                                                         │
+     │ Discount Rules                                                          │
+     │                                                                         │
+     │ ┌──────────┬─────────────────────────────────────┬───────────────────── │
+     │ ───┐                                                                    │
+     │ │ Discount │              Condition              │         Amount       │
+     │    │                                                                    │
+     │ ├──────────┼─────────────────────────────────────┼───────────────────── │
+     │ ───┤                                                                    │
+     │ │          │ Any holiday falls strictly between  │                      │
+     │    │                                                                    │
+     │ │ Holiday  │ start day and end day (exclusive    │ 17% off total        │
+     │    │                                                                    │
+     │ │          │ both ends)                          │                      │
+     │    │                                                                    │
+     │ ├──────────┼─────────────────────────────────────┼───────────────────── │
+     │ ───┤                                                                    │
+     │ │ Duration │ Duration > 72 hours (strictly more  │ $10/hr off hourly    │
+     │ rate │                                                                  │
+     │ │          │ than 3 days)                        │                      │
+     │    │                                                                    │
+     │ ├──────────┼─────────────────────────────────────┼───────────────────── │
+     │ ───┤                                                                    │
+     │ │          │                                     │ Apply whichever      │
+     │ saves  │                                                                │
+     │ │ Conflict │ Both apply                          │ more; holiday wins   │
+     │ on  │                                                                   │
+     │ │          │                                     │ tie                  │
+     │    │                                                                    │
+     │ └──────────┴─────────────────────────────────────┴───────────────────── │
+     │ ───┘                                                                    │
+     │                                                                         │
+     │ Holiday dates (month/day, repeats every year):                          │
+     │ Jan 21, Feb 12, Mar 04, May 02, Jun 16, Jul 26, Aug 03, Sep 01, Nov 05, │
+     │  Dec 18.                                                                │
+     │                                                                         │
+     │ "Strictly between" means: holiday.startOf('day') > start.startOf('day') │
+     │  AND holiday.startOf('day') < end.startOf('day'). Starting or ending on │
+     │  the holiday day does NOT qualify.                                      │
+     │                                                                         │
+     │ Price filter in search continues to filter by base hourly_rate_cents —  │
+     │ discounts are a dynamic benefit layered on top, not a change to a       │
+     │ vehicle's pricing tier.                                                 │
+     │                                                                         │
+     │ ---                                                                     │
+     │ Parallelization Architecture                                            │
+     │                                                                         │
+     │ Two workstreams can run simultaneously once the DiscountInfo interface  │
+     │ (types-only) is committed:                                              │
+     │                                                                         │
+     │ ┌────────┬────────────────────────────────────────────────┬──────────── │
+     │ ───┐                                                                    │
+     │ │ Stream │                     Files                      │  Dependency │
+     │    │                                                                    │
+     │ ├────────┼────────────────────────────────────────────────┼──────────── │
+     │ ───┤                                                                    │
+     │ │ A —    │ app/lib/discounts.ts (impl),                   │ None beyond │
+     │    │                                                                    │
+     │ │ Logic  │ app/lib/__tests__/discounts.test.ts,           │ types       │
+     │    │                                                                    │
+     │ │        │ app/server/api.ts                              │             │
+     │    │                                                                    │
+     │ ├────────┼────────────────────────────────────────────────┼──────────── │
+     │ ───┤                                                                    │
+     │ │        │ app/components/search/VehicleListItem.tsx,     │             │
+     │ DiscountInfo  │                                                         │
+     │ │ B — UI │ app/components/review/ReviewPage.tsx           │ type shape  │
+     │    │                                                                    │
+     │ │        │                                                │ only        │
+     │    │                                                                    │
+     │ └────────┴────────────────────────────────────────────────┴──────────── │
+     │ ───┘                                                                    │
+     │                                                                         │
+     │ Unlock step: create skeleton discounts.ts with types exported (no       │
+     │ function bodies) → commit or write to disk → launch Stream A and Stream │
+     │  B in separate worktrees or Claude sessions simultaneously.             │
+     │                                                                         │
+     │ Stream B can write against the interface contract (DiscountInfo)        │
+     │ without Stream A's implementation existing.                             │
+     │                                                                         │
+     │ ---                                                                     │
+     │ Step-by-Step Implementation                                             │
+     │                                                                         │
+     │ Step 1 — Test script (no installs)                                      │
+     │                                                                         │
+     │ Add to package.json scripts:                                            │
+     │ "test": "node --import tsx/esm --test                                   │
+     │ app/lib/__tests__/discounts.test.ts"                                    │
+     │                                                                         │
+     │ Test files import:                                                      │
+     │ import { test, describe } from "node:test";                             │
+     │ import assert from "node:assert/strict";                                │
+     │                                                                         │
+     │ ▎ --import tsx/esm works on Node ≥ 18.19 (required by Next.js 16        │
+     │ ▎ anyway). Explicit file path, not a glob, for Node 18/20               │
+     │ ▎ compatibility.                                                        │
+     │                                                                         │
+     │ ---                                                                     │
+     │ Step 2 — Skeleton app/lib/discounts.ts (unlock parallel streams)        │
+     │                                                                         │
+     │ Commit types-only. This is the shared contract for both streams.        │
+     │                                                                         │
+     │ import { DateTime } from "luxon";                                       │
+     │                                                                         │
+     │ export const HOLIDAYS = [                                               │
+     │   { month: 1, day: 21 }, { month: 2, day: 12 }, { month: 3, day: 4 },   │
+     │   { month: 5, day: 2 },  { month: 6, day: 16 }, { month: 7, day: 26 },  │
+     │   { month: 8, day: 3 },  { month: 9, day: 1 },  { month: 11, day: 5 },  │
+     │   { month: 12, day: 18 },                                               │
+     │ ] as const;                                                             │
+     │                                                                         │
+     │ export type DiscountType = "holiday" | "duration" | null;               │
+     │                                                                         │
+     │ export interface DiscountInfo {                                         │
+     │   discountType: DiscountType;                                           │
+     │   effectiveTotalPriceCents: number; // post-discount total (clamped ≥   │
+     │ 0)                                                                      │
+     │   savingsCents: number;             // 0 when no discount               │
+     │ }                                                                       │
+     │                                                                         │
+     │ ---                                                                     │
+     │ Step 3 — Tests (app/lib/__tests__/discounts.test.ts) — Stream A         │
+     │                                                                         │
+     │ hasHolidayInRange(start, end) — true if any holiday is strictly inside  │
+     │ the range:                                                              │
+     │                                                                         │
+     │ ┌──────────────────────────────────────────────────────┬─────────────── │
+     │ ───┐                                                                    │
+     │ │                       Scenario                       │     Expected   │
+     │    │                                                                    │
+     │ ├──────────────────────────────────────────────────────┼─────────────── │
+     │ ───┤                                                                    │
+     │ │ Jan 20 → Jan 22 (Jan 21 is inside)                   │ true           │
+     │    │                                                                    │
+     │ ├──────────────────────────────────────────────────────┼─────────────── │
+     │ ───┤                                                                    │
+     │ │ Jan 21 00:00 → Jan 22 (starts on holiday)            │ false          │
+     │    │                                                                    │
+     │ ├──────────────────────────────────────────────────────┼─────────────── │
+     │ ───┤                                                                    │
+     │ │ Jan 20 → Jan 21 23:59 (ends on holiday day)          │ false          │
+     │    │                                                                    │
+     │ ├──────────────────────────────────────────────────────┼─────────────── │
+     │ ───┤                                                                    │
+     │ │ Jan 22 → Jan 24 (no holiday)                         │ false          │
+     │    │                                                                    │
+     │ ├──────────────────────────────────────────────────────┼─────────────── │
+     │ ───┤                                                                    │
+     │ │ Dec 15 → Dec 20 (Dec 18 inside)                      │ true           │
+     │    │                                                                    │
+     │ ├──────────────────────────────────────────────────────┼─────────────── │
+     │ ───┤                                                                    │
+     │ │ Dec 31 year N → Jan 22 year N+1 (Jan 21 inside,      │ true           │
+     │    │                                                                    │
+     │ │ cross-year)                                          │                │
+     │    │                                                                    │
+     │ ├──────────────────────────────────────────────────────┼─────────────── │
+     │ ───┤                                                                    │
+     │ │ Jan 20 → Mar 05 (two holidays inside: Jan 21, Feb    │ true (any is   │
+     │    │                                                                    │
+     │ │ 12, Mar 04)                                          │ enough)        │
+     │    │                                                                    │
+     │ ├──────────────────────────────────────────────────────┼─────────────── │
+     │ ───┤                                                                    │
+     │ │ Start = Jan 21 23:00, End = Jan 22 01:00 (holiday    │ false          │
+     │    │                                                                    │
+     │ │ day = start day)                                     │                │
+     │    │                                                                    │
+     │ └──────────────────────────────────────────────────────┴─────────────── │
+     │ ───┘                                                                    │
+     │                                                                         │
+     │ hasDurationDiscount(durationInHours) — true if strictly > 72:           │
+     │                                                                         │
+     │ ┌────────┬──────────┐                                                   │
+     │ │ Hours  │ Expected │                                                   │
+     │ ├────────┼──────────┤                                                   │
+     │ │ 72.0   │ false    │                                                   │
+     │ ├────────┼──────────┤                                                   │
+     │ │ 72.001 │ true     │                                                   │
+     │ ├────────┼──────────┤                                                   │
+     │ │ 48     │ false    │                                                   │
+     │ ├────────┼──────────┤                                                   │
+     │ │ 96     │ true     │                                                   │
+     │ └────────┴──────────┘                                                   │
+     │                                                                         │
+     │ calculateDiscount(start, end, hourlyRateCents, durationInHours) — best  │
+     │ discount:                                                               │
+     │                                                                         │
+     │ ┌──────────────────────────────────┬─────────────────────┬───────────── │
+     │ ───┐                                                                    │
+     │ │             Scenario             │      Expected       │              │
+     │ savingsCents  │                                                         │
+     │ │                                  │    discountType     │              │
+     │    │                                                                    │
+     │ ├──────────────────────────────────┼─────────────────────┼───────────── │
+     │ ───┤                                                                    │
+     │ │ Holiday inside, ≤ 72h duration   │ "holiday"           │ round(base * │
+     │    │                                                                    │
+     │ │                                  │                     │ 0.17)        │
+     │    │                                                                    │
+     │ ├──────────────────────────────────┼─────────────────────┼───────────── │
+     │ ───┤                                                                    │
+     │ │ No holiday, > 72h duration       │ "duration"          │ 1000 * hours │
+     │    │                                                                    │
+     │ ├──────────────────────────────────┼─────────────────────┼───────────── │
+     │ ───┤                                                                    │
+     │ │ Both apply, holiday saves more   │ "holiday"           │ holiday      │
+     │ amount │                                                                │
+     │ ├──────────────────────────────────┼─────────────────────┼───────────── │
+     │ ───┤                                                                    │
+     │ │ Both apply, duration saves more  │ "duration"          │ duration     │
+     │    │                                                                    │
+     │ │                                  │                     │ amount       │
+     │    │                                                                    │
+     │ ├──────────────────────────────────┼─────────────────────┼───────────── │
+     │ ───┤                                                                    │
+     │ │ Both apply, savings equal        │ "holiday" (tie →    │ either       │
+     │ amount  │                                                               │
+     │ │                                  │ holiday wins)       │              │
+     │    │                                                                    │
+     │ ├──────────────────────────────────┼─────────────────────┼───────────── │
+     │ ───┤                                                                    │
+     │ │ Neither                          │ null                │ 0            │
+     │    │                                                                    │
+     │ ├──────────────────────────────────┼─────────────────────┼───────────── │
+     │ ───┤                                                                    │
+     │ │ effectiveTotalPriceCents never   │ clamped ≥ 0         │ guard holds  │
+     │    │                                                                    │
+     │ │ goes negative                    │                     │              │
+     │    │                                                                    │
+     │ └──────────────────────────────────┴─────────────────────┴───────────── │
+     │ ───┘                                                                    │
+     │                                                                         │
+     │ ---                                                                     │
+     │ Step 4 — Implement discounts.ts — Stream A                              │
+     │                                                                         │
+     │ export function hasHolidayInRange(start: DateTime, end: DateTime):      │
+     │ boolean {                                                               │
+     │   const startDay = start.startOf("day");                                │
+     │   const endDay = end.startOf("day");                                    │
+     │   // Iterate every calendar year spanned — handles multi-year           │
+     │ reservations correctly                                                  │
+     │   for (let year = start.year; year <= end.year; year++) {               │
+     │     for (const { month, day } of HOLIDAYS) {                            │
+     │       const h = DateTime.fromObject({ year, month, day });              │
+     │       if (h > startDay && h < endDay) return true;                      │
+     │     }                                                                   │
+     │   }                                                                     │
+     │   return false;                                                         │
+     │ }                                                                       │
+     │                                                                         │
+     │ export function hasDurationDiscount(durationInHours: number): boolean { │
+     │   return durationInHours > 72;                                          │
+     │ }                                                                       │
+     │                                                                         │
+     │ export function calculateDiscount(                                      │
+     │   start: DateTime,                                                      │
+     │   end: DateTime,                                                        │
+     │   hourlyRateCents: number,                                              │
+     │   durationInHours: number,                                              │
+     │ ): DiscountInfo {                                                       │
+     │   const baseTotalCents = hourlyRateCents * durationInHours;             │
+     │                                                                         │
+     │   const holidaySavings = hasHolidayInRange(start, end)                  │
+     │     ? Math.round(baseTotalCents * 0.17)                                 │
+     │     : null;                                                             │
+     │   // Clamp: discount can't exceed base total (defensive guard)          │
+     │   const durationSavings = hasDurationDiscount(durationInHours)          │
+     │     ? Math.min(1000 * durationInHours, baseTotalCents)                  │
+     │     : null;                                                             │
+     │                                                                         │
+     │   // Holiday wins on tie (savings equal)                                │
+     │   let savings = 0;                                                      │
+     │   let type: DiscountType = null;                                        │
+     │   if (holidaySavings !== null && (durationSavings === null ||           │
+     │ holidaySavings >= durationSavings)) {                                   │
+     │     savings = holidaySavings;                                           │
+     │     type = "holiday";                                                   │
+     │   } else if (durationSavings !== null) {                                │
+     │     savings = durationSavings;                                          │
+     │     type = "duration";                                                  │
+     │   }                                                                     │
+     │                                                                         │
+     │   return {                                                              │
+     │     discountType: type,                                                 │
+     │     effectiveTotalPriceCents: Math.max(0, baseTotalCents - savings),    │
+     │     savingsCents: savings,                                              │
+     │   };                                                                    │
+     │ }                                                                       │
+     │                                                                         │
+     │ ---                                                                     │
+     │ Step 5 — Update app/server/api.ts — Stream A                            │
+     │                                                                         │
+     │ import { calculateDiscount, type DiscountInfo } from "@/lib/discounts"; │
+     │                                                                         │
+     │ // Extend return type — getQuote consumers get discount info            │
+     │ automatically                                                           │
+     │ interface PriceQuote {                                                  │
+     │   totalPriceCents: number;    // pre-discount subtotal                  │
+     │   hourlyRateCents: number;                                              │
+     │   durationInHours: number;                                              │
+     │   discount: DiscountInfo;                                               │
+     │ }                                                                       │
+     │                                                                         │
+     │ const calculateTotalPrice = (                                           │
+     │   start: DateTime,                                                      │
+     │   end: DateTime,                                                        │
+     │   hourlyRateCents: number,                                              │
+     │ ): PriceQuote => {                                                      │
+     │   const durationInHours = end.diff(start, "hours").hours || 0;          │
+     │   const discount = calculateDiscount(start, end, hourlyRateCents,       │
+     │ durationInHours);                                                       │
+     │   return {                                                              │
+     │     totalPriceCents: hourlyRateCents * durationInHours,                 │
+     │     hourlyRateCents,                                                    │
+     │     durationInHours,                                                    │
+     │     discount,                                                           │
+     │   };                                                                    │
+     │ };                                                                      │
+     │ // getQuote() is unchanged — it calls calculateTotalPrice and now       │
+     │ inherits the extended return.                                           │
+     │                                                                         │
+     │ ---                                                                     │
+     │ Step 6 — Update app/components/search/VehicleListItem.tsx — Stream B    │
+     │                                                                         │
+     │ Display treatment differs by discount type (these cannot be conflated): │
+     │ - Duration discount: changes the effective /hr rate → show              │
+     │ strikethrough original + new rate                                       │
+     │ - Holiday discount: is 17% off total, NOT off hourly rate → show badge  │
+     │ + estimated discounted total for the selected period                    │
+     │                                                                         │
+     │ Add estimated total line for any discounted case. Compute via           │
+     │ calculateDiscount imported directly (pure function, no server boundary  │
+     │ concern):                                                               │
+     │                                                                         │
+     │ import { DateTime } from "luxon";                                       │
+     │ import { calculateDiscount } from "@/lib/discounts";                    │
+     │ import { formatCents } from "@/lib/formatters";                         │
+     │                                                                         │
+     │ // Inside component — durationInHours from Luxon for consistency with   │
+     │ api.ts                                                                  │
+     │ const luxonStart = DateTime.fromJSDate(startDateTime);                  │
+     │ const luxonEnd = DateTime.fromJSDate(endDateTime);                      │
+     │ const durationInHours = luxonEnd.diff(luxonStart, "hours").hours;       │
+     │ const discount = calculateDiscount(luxonStart, luxonEnd,                │
+     │ vehicle.hourly_rate_cents, durationInHours);                            │
+     │ const effectiveHourlyRate = discount.discountType === "duration"        │
+     │   ? vehicle.hourly_rate_cents - 1000   // $10/hr off → show reduced     │
+     │ rate                                                                    │
+     │   : vehicle.hourly_rate_cents;          // holiday discount: rate       │
+     │ unchanged, total changes                                                │
+     │                                                                         │
+     │ Price display:                                                          │
+     │ {/* Always show hourly rate — strikethrough if duration discount */}    │
+     │ <p className="text-xl font-bold">                                       │
+     │   {discount.discountType === "duration" && (                            │
+     │     <span className="line-through text-gray-400 text-sm mr-1">          │
+     │       {formatCents(vehicle.hourly_rate_cents)}                          │
+     │     </span>                                                             │
+     │   )}                                                                    │
+     │   {formatCents(effectiveHourlyRate)}                                    │
+     │   <span className="text-sm text-gray-700 font-normal ml-0.5">/hr</span> │
+     │ </p>                                                                    │
+     │                                                                         │
+     │ {/* Discount badge + estimated total (only when discount applies) */}   │
+     │ {discount.discountType !== null && (                                    │
+     │   <div className="mt-1">                                                │
+     │     <span className="text-xs font-medium text-green-700 bg-green-100    │
+     │ px-2 py-0.5 rounded">                                                   │
+     │       {discount.discountType === "holiday" ? "17% Holiday Deal" :       │
+     │ "Multi-Day Discount"}                                                   │
+     │     </span>                                                             │
+     │     <p className="text-sm text-gray-600 mt-1">                          │
+     │       Est. <span className="font-medium">{formatCents(discount.effectiv │
+     │ eTotalPriceCents)}</span> total                                         │
+     │       <span className="text-green-600 ml-1">                            │
+     │         (save {formatCents(discount.savingsCents)})                     │
+     │       </span>                                                           │
+     │     </p>                                                                │
+     │   </div>                                                                │
+     │ )}                                                                      │
+     │                                                                         │
+     │ ---                                                                     │
+     │ Step 7 — Update app/components/review/ReviewPage.tsx — Stream B         │
+     │                                                                         │
+     │ Replace the "Total Cost" <div> block with:                              │
+     │                                                                         │
+     │ {/* Subtotal — only shown when a discount applies */}                   │
+     │ {quote.discount.discountType !== null && (                              │
+     │   <div>                                                                 │
+     │     <dt className="text-sm text-gray-600">Subtotal</dt>                 │
+     │     <dd>{formatCents(quote.totalPriceCents)}</dd>                       │
+     │   </div>                                                                │
+     │ )}                                                                      │
+     │                                                                         │
+     │ {/* Discount line */}                                                   │
+     │ {quote.discount.discountType !== null && (                              │
+     │   <div>                                                                 │
+     │     <dt className="text-sm text-green-700">                             │
+     │       {quote.discount.discountType === "holiday"                        │
+     │         ? "Holiday Discount (17% off)"                                  │
+     │         : "Multi-Day Discount ($10/hr off)"}                            │
+     │     </dt>                                                               │
+     │     <dd className="text-green-700">                                     │
+     │       −{formatCents(quote.discount.savingsCents)}                       │
+     │     </dd>                                                               │
+     │   </div>                                                                │
+     │ )}                                                                      │
+     │                                                                         │
+     │ {/* Total — always shown, uses effective price */}                      │
+     │ <div>                                                                   │
+     │   <dt className="text-sm text-gray-600">Total Cost</dt>                 │
+     │   <dd className="text-2xl font-medium tracking-tight">                  │
+     │     {formatCents(quote.discount.effectiveTotalPriceCents)}              │
+     │   </dd>                                                                 │
+     │ </div>                                                                  │
+     │                                                                         │
+     │ ---                                                                     │
+     │ Critical Files                                                          │
+     │                                                                         │
+     │ ┌───────────────────────────────────────┬───────────────────┬────────── │
+     │ ───┐                                                                    │
+     │ │                 File                  │      Action       │   Stream  │
+     │    │                                                                    │
+     │ ├───────────────────────────────────────┼───────────────────┼────────── │
+     │ ───┤                                                                    │
+     │ │ package.json                          │ Add test script   │           │
+     │ prerequisit │                                                           │
+     │ │                                       │                   │ e         │
+     │    │                                                                    │
+     │ ├───────────────────────────────────────┼───────────────────┼────────── │
+     │ ───┤                                                                    │
+     │ │                                       │ New — types       │           │
+     │    │                                                                    │
+     │ │ app/lib/discounts.ts                  │ skeleton → full   │ A         │
+     │    │                                                                    │
+     │ │                                       │ impl              │           │
+     │    │                                                                    │
+     │ ├───────────────────────────────────────┼───────────────────┼────────── │
+     │ ───┤                                                                    │
+     │ │ app/lib/__tests__/discounts.test.ts   │ New — unit tests  │ A         │
+     │    │                                                                    │
+     │ ├───────────────────────────────────────┼───────────────────┼────────── │
+     │ ───┤                                                                    │
+     │ │                                       │ Extend calculateT │           │
+     │    │                                                                    │
+     │ │ app/server/api.ts                     │ otalPrice return  │ A         │
+     │    │                                                                    │
+     │ │                                       │ type              │           │
+     │    │                                                                    │
+     │ ├───────────────────────────────────────┼───────────────────┼────────── │
+     │ ───┤                                                                    │
+     │ │ app/components/search/VehicleListItem │ Discount badge +  │ B         │
+     │    │                                                                    │
+     │ │ .tsx                                  │ effective pricing │           │
+     │    │                                                                    │
+     │ ├───────────────────────────────────────┼───────────────────┼────────── │
+     │ ───┤                                                                    │
+     │ │                                       │ Subtotal +        │           │
+     │    │                                                                    │
+     │ │ app/components/review/ReviewPage.tsx  │ discount line +   │ B         │
+     │    │                                                                    │
+     │ │                                       │ effective total   │           │
+     │    │                                                                    │
+     │ └───────────────────────────────────────┴───────────────────┴────────── │
+     │ ───┘                                                                    │
+     │                                                                         │
+     │ ---                                                                     │
+     │ Verification                                                            │
+     │                                                                         │
+     │ 1. npm test — all discount unit tests pass                              │
+     │ 2. npm run ts — zero TypeScript errors                                  │
+     │ 3. Manual browser testing:                                              │
+     │   - Holiday discount: pick Jan 20 → Jan 22; green badge + "Est. $X      │
+     │ total" on search card; review page shows subtotal, discount line,       │
+     │ reduced total                                                           │
+     │   - No holiday if on boundary: pick Jan 21 → Jan 23; no discount shown  │
+     │   - Duration discount: pick any 4-day range without holiday;            │
+     │ strikethrough original /hr, new rate shown; review shows $10/hr savings │
+     │   - Better discount wins: pick a 4-day range crossing a holiday; only   │
+     │ the winning discount shown on both pages                                │
+     │   - No discount: pick a short range with no holiday; plain price        │
+     │ display, no badge                                                       │
+     ╰─────────────────────────────────────────────────────────────────────────╯
+
+❯ write plan to PART2_PLAN.md file                                              
+
+  Read 1 file (ctrl+o to expand)
+
+⏺ Write(PART2_PLAN.md)
+  ⎿  Wrote 323 lines to PART2_PLAN.md
+       2 # Holiday & Duration Discount Feature Plan
+       3 ## Context
+         ict rule. No discount system exists today. No testing infrastruc
+         ture exists — we use Node.js built-in `node:test` + `node:assert
+         lls needed.already-installed `tsx` devDependency. Zero new insta
+       5 
+       7 ## Discount Rules
+       8 | Discount | Condition | Amount |
+      10 | Holiday | Any holiday falls **strictly between** start day and
+          end day (exclusive both ends) | 17% off total |
+     … +381 lines (ctrl+o to expand)
+
+⏺ Written to PART2_PLAN.md in the project root. Ready to implement whenever you
+  are.
+
+✻ Crunched for 1m 11s

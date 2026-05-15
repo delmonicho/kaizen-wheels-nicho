@@ -2816,3 +2816,15 @@
   divergence risk from the duplicated - 1000 in the component).
 
 ✻ Cooked for 11s
+
+❯ Lets add a brief section to the decision log for What i'd do differently if i weren't time-boxed...
+
+⏺ Update(DECISIONS.md) — added "Without a Time Box" section covering shared design library, platform-level domain modules, and Playwright e2e testing
+
+⏺ Added the section covering design library for shared UI primitives, platform-level thinking about domain modules, and Playwright e2e to replace manual smoke testing while keeping the habit for UX intuition.
+
+❯ lets add a BONUS - UX callout section at the bottom of the DECISIONS.md about the date picker...
+
+⏺ Update(DECISIONS.md) — added "BONUS — UX Callout: Date Picker" section
+
+⏺ Added. The section names the problem (popover snaps to today instead of the user's existing selection), explains why it matters (forces unnecessary navigation, signals the app forgot their context), and frames the fix in terms of user intent (modifying a booking = likely choosing a nearby date).

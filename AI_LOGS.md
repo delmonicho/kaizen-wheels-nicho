@@ -2737,3 +2737,82 @@
   provided was self-consistent at 7 tests for that block).
 
 ✻ Sautéed for 1m 27s
+
+❯ consider more opportunities to refactor the discount code logic.  how can we improve error handling, code maintainability, extensibility, code health. What is the next most impactful refactor we can do in 5 minutes?
+
+⏺ I'll explore the discount logic and its usages in parallel.
+
+⏺ Explore(Explore discount lib and callers)
+  ⎿  Done (5 tool uses · 28.3k tokens · 28s)
+
+⏺ Good, I have everything I need. Let me design the plan.
+
+⏺ Plan(Design refactor plan for discount code)
+  ⎿  Done (7 tool uses · 30.0k tokens · 57s)
+
+⏺ Now I'll write the final plan file.
+
+⏺ Updated plan
+  ⎿  /plan to preview
+
+⏺ User approved Claude's plan
+  ⎿  Plan: Discount Module Refactor — Named Constants + effectiveHourlyRateCents
+
+⏺ Plan approved. I'll execute all three file changes now.
+
+  Read 2 files (ctrl+o to expand)
+
+⏺ All three files are read. I'll make all the edits now.
+
+⏺ Update(app/lib/discounts.ts) — added HOLIDAY_DISCOUNT_RATE, DURATION_THRESHOLD_HOURS, DURATION_DISCOUNT_CENTS_PER_HOUR constants
+
+⏺ Update(app/lib/discounts.ts) — added effectiveHourlyRateCents to DiscountInfo interface
+
+⏺ Update(app/lib/discounts.ts) — replaced literal 72 with DURATION_THRESHOLD_HOURS
+
+⏺ Update(app/lib/discounts.ts) — replaced 0.17 and 1000 literals with named constants
+
+⏺ Update(app/lib/discounts.ts) — added effectiveHourlyRateCents to calculateDiscount return value
+
+⏺ Update(app/components/search/VehicleListItem.tsx) — removed hardcoded - 1000 re-derivation
+
+⏺ Update(app/components/search/VehicleListItem.tsx) — replaced effectiveHourlyRate with discount.effectiveHourlyRateCents
+
+⏺ Update(app/lib/__tests__/discounts.test.ts) — imported HOLIDAY_DISCOUNT_RATE, DURATION_DISCOUNT_CENTS_PER_HOUR
+
+⏺ Update(app/lib/__tests__/discounts.test.ts) — replaced 0.17 literals, added effectiveHourlyRateCents assertion for holiday case
+
+⏺ Update(app/lib/__tests__/discounts.test.ts) — replaced 1000 literals, added effectiveHourlyRateCents assertion for duration case
+
+⏺ Update(app/lib/__tests__/discounts.test.ts) — replaced remaining 0.17 and 1000 literals in conflict tests
+
+⏺ Bash(npm test && npm run ts)
+  ⎿  45/45 green, zero TypeScript errors.
+
+⏺ 45/45 green, zero TypeScript errors. All done.
+
+  What changed:
+
+  - discounts.ts — three named constants (HOLIDAY_DISCOUNT_RATE,
+  DURATION_THRESHOLD_HOURS, DURATION_DISCOUNT_CENTS_PER_HOUR) replace bare
+  literals throughout; DiscountInfo gains effectiveHourlyRateCents computed and
+  owned by calculateDiscount.
+  - VehicleListItem.tsx — the hardcoded - 1000 re-derivation is gone; the
+  component now reads discount.effectiveHourlyRateCents directly, making it
+  purely presentational.
+  - discounts.test.ts — all magic literals in assertions replaced with the
+  imported constants; two new assertions lock effectiveHourlyRateCents in for
+  the holiday and duration cases.
+
+✻ Cogitated for 4m 25s
+
+❯ add a one liner to the part 3 refactor section of the decisions.md about this refactor, what and why
+
+⏺ Update(DECISIONS.md)
+  ⎿  Added 2 lines — appended one-liner about named constants + effectiveHourlyRateCents to Part 3 section
+
+⏺ Done. Appended a one-liner (two sentences) to the Part 3 section covering what
+  changed (named constants + effectiveHourlyRateCents) and why (silent
+  divergence risk from the duplicated - 1000 in the component).
+
+✻ Cooked for 11s

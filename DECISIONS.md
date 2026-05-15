@@ -21,3 +21,5 @@ For `hasHolidayInRange`, the four hand-written Jan 21 / Dec 18 tests were replac
 For `calculateDiscount`, the holiday and duration discount tests gained `effectiveTotalPriceCents` assertions. The fake tie-break test — which never actually activated the duration branch and acknowledged it couldn't produce a true tie — was replaced with a 72h exact-boundary test that has genuine practical value. The clamping guard was tightened from `>= 0` to exact equality, so it would catch a misclamped `savingsCents` value that `Math.max(0, …)` would otherwise mask.
 
 Final count: 45 tests (up from 19), all passing, zero TypeScript errors.
+
+3. The discount module was also refactored to extract the three business-rule literals (`0.17`, `72`, `1000`) as named exported constants and add `effectiveHourlyRateCents` to `DiscountInfo` — eliminating a hardcoded `- 1000` in `VehicleListItem` that silently diverged from the library whenever the per-hour discount rate changed.

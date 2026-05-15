@@ -1,5 +1,9 @@
 import { DateTime } from "luxon";
 
+export const HOLIDAY_DISCOUNT_RATE            = 0.17;
+export const DURATION_THRESHOLD_HOURS          = 72;
+export const DURATION_DISCOUNT_CENTS_PER_HOUR  = 1000;
+
 export const HOLIDAYS = [
   { month: 1, day: 21 }, { month: 2, day: 12 }, { month: 3, day: 4 },
   { month: 5, day: 2 },  { month: 6, day: 16 }, { month: 7, day: 26 },
@@ -12,6 +16,7 @@ export type DiscountType = "holiday" | "duration" | null;
 export interface DiscountInfo {
   discountType: DiscountType;
   effectiveTotalPriceCents: number;
+  effectiveHourlyRateCents: number;
   savingsCents: number;
 }
 
@@ -28,7 +33,7 @@ export function hasHolidayInRange(start: DateTime, end: DateTime): boolean {
 }
 
 export function hasDurationDiscount(durationInHours: number): boolean {
-  return durationInHours > 72;
+  return durationInHours > DURATION_THRESHOLD_HOURS;
 }
 
 export function calculateDiscount(
@@ -40,10 +45,10 @@ export function calculateDiscount(
   const baseTotalCents = hourlyRateCents * durationInHours;
 
   const holidaySavings = hasHolidayInRange(start, end)
-    ? Math.round(baseTotalCents * 0.17)
+    ? Math.round(baseTotalCents * HOLIDAY_DISCOUNT_RATE)
     : null;
   const durationSavings = hasDurationDiscount(durationInHours)
-    ? Math.min(1000 * durationInHours, baseTotalCents)
+    ? Math.min(DURATION_DISCOUNT_CENTS_PER_HOUR * durationInHours, baseTotalCents)
     : null;
 
   let savings = 0;
@@ -59,6 +64,10 @@ export function calculateDiscount(
   return {
     discountType: type,
     effectiveTotalPriceCents: Math.max(0, baseTotalCents - savings),
+    effectiveHourlyRateCents:
+      type === "duration"
+        ? Math.max(0, hourlyRateCents - DURATION_DISCOUNT_CENTS_PER_HOUR)
+        : hourlyRateCents,
     savingsCents: savings,
   };
 }

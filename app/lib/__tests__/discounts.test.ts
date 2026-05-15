@@ -5,6 +5,8 @@ import {
   hasHolidayInRange,
   hasDurationDiscount,
   calculateDiscount,
+  HOLIDAY_DISCOUNT_RATE,
+  DURATION_DISCOUNT_CENTS_PER_HOUR,
 } from "../discounts.js";
 
 const dt = (iso: string) => DateTime.fromISO(iso);
@@ -87,8 +89,9 @@ describe("calculateDiscount", () => {
     const result = calculateDiscount(start, end, hourlyRate, hours24);
     const base = hourlyRate * hours24;
     assert.equal(result.discountType, "holiday");
-    assert.equal(result.savingsCents, Math.round(base * 0.17));
-    assert.equal(result.effectiveTotalPriceCents, base - Math.round(base * 0.17));
+    assert.equal(result.savingsCents, Math.round(base * HOLIDAY_DISCOUNT_RATE));
+    assert.equal(result.effectiveTotalPriceCents, base - Math.round(base * HOLIDAY_DISCOUNT_RATE));
+    assert.equal(result.effectiveHourlyRateCents, hourlyRate);
   });
 
   test("no holiday, > 72h → duration discount", () => {
@@ -97,14 +100,15 @@ describe("calculateDiscount", () => {
     const result = calculateDiscount(noHolStart, noHolEnd, hourlyRate, hours96);
     const base = hourlyRate * hours96;
     assert.equal(result.discountType, "duration");
-    assert.equal(result.savingsCents, 1000 * hours96);
-    assert.equal(result.effectiveTotalPriceCents, base - 1000 * hours96);
+    assert.equal(result.savingsCents, DURATION_DISCOUNT_CENTS_PER_HOUR * hours96);
+    assert.equal(result.effectiveTotalPriceCents, base - DURATION_DISCOUNT_CENTS_PER_HOUR * hours96);
+    assert.equal(result.effectiveHourlyRateCents, hourlyRate - DURATION_DISCOUNT_CENTS_PER_HOUR);
   });
 
   test("both apply, holiday saves more → holiday wins", () => {
     const highRate = 10000;
-    const hSavings = Math.round(highRate * hours96 * 0.17); // 163200
-    const dSavings = 1000 * hours96;                        // 96000
+    const hSavings = Math.round(highRate * hours96 * HOLIDAY_DISCOUNT_RATE); // 163200
+    const dSavings = DURATION_DISCOUNT_CENTS_PER_HOUR * hours96;             // 96000
     assert.ok(hSavings > dSavings);
     const result = calculateDiscount(dt("2025-01-20"), dt("2025-01-24"), highRate, hours96);
     assert.equal(result.discountType, "holiday");
@@ -114,8 +118,8 @@ describe("calculateDiscount", () => {
   test("both apply, duration saves more → duration wins", () => {
     const rate = 2000;
     const baseCents = rate * hours96;
-    const dSavings = Math.min(1000 * hours96, baseCents); // 96000
-    const hSavings = Math.round(baseCents * 0.17);        // 32640
+    const dSavings = Math.min(DURATION_DISCOUNT_CENTS_PER_HOUR * hours96, baseCents); // 96000
+    const hSavings = Math.round(baseCents * HOLIDAY_DISCOUNT_RATE);                   // 32640
     assert.ok(dSavings > hSavings);
     const result = calculateDiscount(dt("2025-01-20"), dt("2025-01-24"), rate, hours96);
     assert.equal(result.discountType, "duration");

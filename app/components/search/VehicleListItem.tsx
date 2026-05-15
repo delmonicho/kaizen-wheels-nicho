@@ -28,9 +28,6 @@ export function VehicleListItem({
   const luxonEnd = DateTime.fromJSDate(endDateTime);
   const durationInHours = luxonEnd.diff(luxonStart, "hours").hours;
   const discount = calculateDiscount(luxonStart, luxonEnd, vehicle.hourly_rate_cents, durationInHours);
-  const effectiveHourlyRate = discount.discountType === "duration"
-    ? vehicle.hourly_rate_cents - 1000
-    : vehicle.hourly_rate_cents;
 
   return (
     <Card
@@ -70,7 +67,7 @@ export function VehicleListItem({
               {formatCents(vehicle.hourly_rate_cents)}
             </span>
           )}
-          {formatCents(effectiveHourlyRate)}
+          {formatCents(discount.effectiveHourlyRateCents)}
           <span className="text-sm text-gray-700 font-normal ml-0.5">/hr</span>
         </p>
         {discount.discountType !== null && (

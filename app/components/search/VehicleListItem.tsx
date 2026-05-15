@@ -1,6 +1,8 @@
 import { formatCents } from "@/lib/formatters";
+import { calculateDiscount } from "@/lib/discounts";
 import { Vehicle } from "@/server/data";
 import { useBase64Image } from "@/util/useBase64Image";
+import { DateTime } from "luxon";
 import Link from "next/link";
 import { Button } from "@/components/shared/ui/button";
 import { Card, CardTitle } from "@/components/shared/ui/card";
@@ -21,6 +23,14 @@ export function VehicleListItem({
   });
 
   const imgData = useBase64Image(vehicle.thumbnail_url);
+
+  const luxonStart = DateTime.fromJSDate(startDateTime);
+  const luxonEnd = DateTime.fromJSDate(endDateTime);
+  const durationInHours = luxonEnd.diff(luxonStart, "hours").hours;
+  const discount = calculateDiscount(luxonStart, luxonEnd, vehicle.hourly_rate_cents, durationInHours);
+  const effectiveHourlyRate = discount.discountType === "duration"
+    ? vehicle.hourly_rate_cents - 1000
+    : vehicle.hourly_rate_cents;
 
   return (
     <Card
@@ -55,9 +65,27 @@ export function VehicleListItem({
       </div>
       <div className="md:ml-auto text-center md:text-right flex flex-col justify-center mt-4 md:mt-0">
         <p className="text-xl font-bold">
-          {formatCents(vehicle.hourly_rate_cents)}
+          {discount.discountType === "duration" && (
+            <span className="line-through text-gray-400 text-sm mr-1">
+              {formatCents(vehicle.hourly_rate_cents)}
+            </span>
+          )}
+          {formatCents(effectiveHourlyRate)}
           <span className="text-sm text-gray-700 font-normal ml-0.5">/hr</span>
         </p>
+        {discount.discountType !== null && (
+          <div className="mt-1">
+            <span className="text-xs font-medium text-green-700 bg-green-100 px-2 py-0.5 rounded">
+              {discount.discountType === "holiday" ? "17% Holiday Deal" : "Multi-Day Discount"}
+            </span>
+            <p className="text-sm text-gray-600 mt-1">
+              Est. <span className="font-medium">{formatCents(discount.effectiveTotalPriceCents)}</span> total
+              <span className="text-green-600 ml-1">
+                (save {formatCents(discount.savingsCents)})
+              </span>
+            </p>
+          </div>
+        )}
         <Button asChild className="mt-2 w-full sm:w-auto">
           <Link href={`/review?${bookNowParams.toString()}`}>
             Book now

@@ -1,4 +1,5 @@
 import { DateTime } from "luxon";
+import { calculateDiscount, type DiscountInfo } from "@/lib/discounts";
 import {
   getAvailableVehicles,
   getReservationById,
@@ -27,17 +28,25 @@ const parseAndValidateTimeRange = (startTime: string, endTime: string) => {
   return { start, end };
 };
 
+interface PriceQuote {
+  totalPriceCents: number;
+  hourlyRateCents: number;
+  durationInHours: number;
+  discount: DiscountInfo;
+}
+
 const calculateTotalPrice = (
   start: DateTime,
   end: DateTime,
   hourlyRateCents: number,
-) => {
+): PriceQuote => {
   const durationInHours = end.diff(start, "hours").hours || 0;
-
+  const discount = calculateDiscount(start, end, hourlyRateCents, durationInHours);
   return {
     totalPriceCents: hourlyRateCents * durationInHours,
     hourlyRateCents,
     durationInHours,
+    discount,
   };
 };
 

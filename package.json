@@ -7,7 +7,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "ts": "tsc --noEmit"
+    "ts": "tsc --noEmit",
+    "test": "node --import tsx/esm --test app/lib/__tests__/discounts.test.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",

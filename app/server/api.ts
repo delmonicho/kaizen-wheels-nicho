@@ -6,6 +6,8 @@ import {
   getVehicles,
 } from "./data_helpers";
 
+const PRICE_STEP = 10;
+
 const parseAndValidateTimeRange = (startTime: string, endTime: string) => {
   const start = DateTime.fromISO(startTime);
   const end = DateTime.fromISO(endTime);
@@ -76,7 +78,10 @@ function searchVehicles(input: {
   } = input;
 
   const parsedPriceMin = priceMin;
-  const parsedPriceMax = priceMax === 100 ? Number.MAX_SAFE_INTEGER : priceMax;
+  const allVehicles = getVehicles();
+  const maxCents = Math.max(...allVehicles.map((v) => v.hourly_rate_cents));
+  const sliderMax = Math.ceil(maxCents / 100 / PRICE_STEP) * PRICE_STEP + PRICE_STEP;
+  const parsedPriceMax = priceMax >= sliderMax ? Number.MAX_SAFE_INTEGER : priceMax;
 
   try {
     const { start, end } = parseAndValidateTimeRange(startTime, endTime);
@@ -106,6 +111,7 @@ export interface FilterOptions {
   makes: string[];
   classifications: string[];
   passengerCounts: number[];
+  priceRange: { min: number; max: number };
 }
 
 function getFilterOptions(): FilterOptions {
@@ -119,10 +125,16 @@ function getFilterOptions(): FilterOptions {
     ...new Set(allVehicles.map((v) => v.max_passengers)),
   ].sort((a, b) => a - b);
 
+  const maxCents = Math.max(...allVehicles.map((v) => v.hourly_rate_cents));
+  const minCents = Math.min(...allVehicles.map((v) => v.hourly_rate_cents));
+  const priceMax = Math.ceil(maxCents / 100 / PRICE_STEP) * PRICE_STEP + PRICE_STEP;
+  const priceMin = Math.floor(minCents / 100 / PRICE_STEP) * PRICE_STEP;
+
   return {
     makes: uniqueMakes,
     classifications: uniqueClassifications,
     passengerCounts: uniquePassengerCounts,
+    priceRange: { min: priceMin, max: priceMax },
   };
 }
 

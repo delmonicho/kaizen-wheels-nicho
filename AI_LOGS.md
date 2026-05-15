@@ -2000,4 +2000,740 @@
 ⏺ Written to PART2_PLAN.md in the project root. Ready to implement whenever you
   are.
 
-✻ Crunched for 1m 11s
+✻ Crunched for 1m 11s╭─── Claude Code v2.1.128 ─────────────────────────────────────────────────────╮
+│                                                    │ Tips for getting        │
+│                 Welcome back nicho!                │ started                 │
+│                                                    │ Run /init to create a … │
+│                       ▐▛███▜▌                      │ ─────────────────────── │
+│                      ▝▜█████▛▘                     │ What's new              │
+│                        ▘▘ ▝▝                       │ Added new `claude agen… │
+│ Sonnet 4.6 · Claude Pro · nicho.delmo@gmail.com's  │ Fast mode now uses Opu… │
+│ Organization                                       │ Plugins with a root-le… │
+│         ~/Desktop/kaizen-take-home (2) (1)         │ /release-notes for more │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+❯ Execute plan: /Users/delmo/Desktop/kaizen-take-home (2) (1)/PART2_PLAN.md     
+
+⏺ Let me read the plan file first.
+
+  Read 1 file (ctrl+o to expand)
+
+⏺ Now let me explore the existing codebase to understand what's there.
+
+  Searched for 1 pattern, read 1 file (ctrl+o to expand)
+
+⏺ Let me read the key files before implementing.
+
+  Read 3 files (ctrl+o to expand)
+
+⏺ I have a clear picture of all the files. Let me implement the plan now — I'll
+  create all files in parallel where possible.
+
+  Listed 1 directory (ctrl+o to expand)
+
+⏺ All the context I need is loaded. Now I'll implement all 6 steps in parallel.
+
+⏺ Update(package.json)
+  ⎿  Added 2 lines, removed 1 line
+       7      "dev": "next dev",
+       8      "build": "next build",
+       9      "start": "next start",
+      10 -    "ts": "tsc --noEmit"                                       
+      10 +    "ts": "tsc --noEmit",                                      
+      11 +    "test": "node --import tsx/esm --test app/lib/__tests__/dis
+         +counts.test.ts"                                                
+      12    },
+      13    "dependencies": {
+      14      "@hookform/resolvers": "^3.9.0",
+
+⏺ Write(app/lib/discounts.ts)
+  ⎿  Wrote 64 lines to app/lib/discounts.ts
+       2 import { DateTime } from "luxon";
+       3 export const HOLIDAYS = [
+       4   { month: 1, day: 21 }, { month: 2, day: 12 }, { month: 3, day:
+       5   { month: 5, day: 2 },  { month: 6, day: 16 }, { month: 7, day:
+          26 },
+       6   { month: 8, day: 3 },  { month: 9, day: 1 },  { month: 11, day
+       7   { month: 12, day: 18 },
+       8 ] as const;
+       9 
+      10 export type DiscountType = "holiday" | "duration" | null;
+     … +60 lines (ctrl+o to expand)
+
+⏺ Now writing the test file and updating the three remaining files in parallel.
+
+⏺ Write(app/lib/__tests__/discounts.test.ts)
+  ⎿  Wrote 148 lines to app/lib/__tests__/discounts.test.ts
+       1 import { test, describe } from "node:test";
+       2 import assert from "node:assert/strict";
+       3 import { DateTime } from "luxon";
+       4 import {
+       5   hasHolidayInRange,
+       6   hasDurationDiscount,
+       7   calculateDiscount,
+       8 } from "../discounts.js";
+       9 
+      10 const dt = (iso: string) => DateTime.fromISO(iso);
+     … +172 lines (ctrl+o to expand)
+
+⏺ Update(app/server/api.ts)
+  ⎿  Added 1 line
+      1  import { DateTime } from "luxon";
+      2 +import { calculateDiscount, type DiscountInfo } from "@/lib/disc
+        +ounts";                                                         
+      3  import {
+      4    getAvailableVehicles,
+      5    getReservationById,
+
+⏺ Update(app/server/api.ts)
+  ⎿  Added 10 lines, removed 2 lines
+      28    return { start, end };
+      29  };
+      30  
+      31 +interface PriceQuote {                                         
+      32 +  totalPriceCents: number;                                     
+      33 +  hourlyRateCents: number;                                     
+      34 +  durationInHours: number;                                     
+      35 +  discount: DiscountInfo;                                      
+      36 +}                                                              
+      37 +                                                               
+      38  const calculateTotalPrice = (
+      39    start: DateTime,
+      40    end: DateTime,
+      41    hourlyRateCents: number,
+      35 -) => {                                                         
+      42 +): PriceQuote => {                                             
+      43    const durationInHours = end.diff(start, "hours").hours || 0;
+      37 -                                                               
+      44 +  const discount = calculateDiscount(start, end, hourlyRateCent
+         +s, durationInHours);                                           
+      45    return {
+      46      totalPriceCents: hourlyRateCents * durationInHours,
+      47      hourlyRateCents,
+      48      durationInHours,
+      49 +    discount,                                                  
+      50    };
+      51  };
+      52  
+
+⏺ Now updating both UI components in parallel.
+
+⏺ Update(app/components/search/VehicleListItem.tsx)
+  ⎿  Added 29 lines, removed 1 line
+      1  import { formatCents } from "@/lib/formatters";
+      2 +import { calculateDiscount } from "@/lib/discounts";            
+      3  import { Vehicle } from "@/server/data";
+      4  import { useBase64Image } from "@/util/useBase64Image";
+      5 +import { DateTime } from "luxon";                               
+      6  import Link from "next/link";
+      7  import { Button } from "@/components/shared/ui/button";
+      8  import { Card, CardTitle } from "@/components/shared/ui/card";
+     ...
+      24  
+      25    const imgData = useBase64Image(vehicle.thumbnail_url);
+      26  
+      27 +  const luxonStart = DateTime.fromJSDate(startDateTime);       
+      28 +  const luxonEnd = DateTime.fromJSDate(endDateTime);           
+      29 +  const durationInHours = luxonEnd.diff(luxonStart, "hours").ho
+         +urs;                                                           
+      30 +  const discount = calculateDiscount(luxonStart, luxonEnd, vehi
+         +cle.hourly_rate_cents, durationInHours);                       
+      31 +  const effectiveHourlyRate = discount.discountType === "durati
+         +on"                                                            
+      32 +    ? vehicle.hourly_rate_cents - 1000                         
+      33 +    : vehicle.hourly_rate_cents;                               
+      34 +                                                               
+      35    return (
+      36      <Card
+      37        key={vehicle.id}
+     ...
+      65        </div>
+      66        <div className="md:ml-auto text-center md:text-right flex
+           flex-col justify-center mt-4 md:mt-0">
+      67          <p className="text-xl font-bold">
+      58 -          {formatCents(vehicle.hourly_rate_cents)}             
+      68 +          {discount.discountType === "duration" && (           
+      69 +            <span className="line-through text-gray-400 text-sm
+         + mr-1">                                                        
+      70 +              {formatCents(vehicle.hourly_rate_cents)}         
+      71 +            </span>                                            
+      72 +          )}                                                   
+      73 +          {formatCents(effectiveHourlyRate)}                   
+      74            <span className="text-sm text-gray-700 font-normal ml
+          -0.5">/hr</span>
+      75          </p>
+      76 +        {discount.discountType !== null && (                   
+      77 +          <div className="mt-1">                               
+      78 +            <span className="text-xs font-medium text-green-700
+         + bg-green-100 px-2 py-0.5 rounded">                            
+      79 +              {discount.discountType === "holiday" ? "17% Holid
+         +ay Deal" : "Multi-Day Discount"}                               
+      80 +            </span>                                            
+      81 +            <p className="text-sm text-gray-600 mt-1">         
+      82 +              Est. <span className="font-medium">{formatCents(d
+         +iscount.effectiveTotalPriceCents)}</span> total                
+      83 +              <span className="text-green-600 ml-1">           
+      84 +                (save {formatCents(discount.savingsCents)})    
+      85 +              </span>                                          
+      86 +            </p>                                               
+      87 +          </div>                                               
+      88 +        )}                                                     
+      89          <Button asChild className="mt-2 w-full sm:w-auto">
+      90            <Link href={`/review?${bookNowParams.toString()}`}>
+      91              Book now
+
+⏺ Update(app/components/review/ReviewPage.tsx)
+  ⎿  Added 19 lines, removed 1 line
+       94                <dt className="text-sm text-gray-600">Duration</
+           dt>
+       95                <dd>{formattedDuration}</dd>
+       96              </div>
+       97 +            {quote.discount.discountType !== null && (        
+       98 +              <div>                                           
+       99 +                <dt className="text-sm text-gray-600">Subtotal
+          +</dt>                                                         
+      100 +                <dd>{formatCents(quote.totalPriceCents)}</dd> 
+      101 +              </div>                                          
+      102 +            )}                                                
+      103 +            {quote.discount.discountType !== null && (        
+      104 +              <div>                                           
+      105 +                <dt className="text-sm text-green-700">       
+      106 +                  {quote.discount.discountType === "holiday"  
+      107 +                    ? "Holiday Discount (17% off)"            
+      108 +                    : "Multi-Day Discount ($10/hr off)"}      
+      109 +                </dt>                                         
+      110 +                <dd className="text-green-700">               
+      111 +                  −{formatCents(quote.discount.savingsCents)} 
+      112 +                </dd>                                         
+      113 +              </div>                                          
+      114 +            )}                                                
+      115              <div>
+      116                <dt className="text-sm text-gray-600">Total Cost
+           </dt>
+      117                <dd className="text-2xl font-medium tracking-tig
+           ht">
+      100 -                {formatCents(quote.totalPriceCents)}          
+      118 +                {formatCents(quote.discount.effectiveTotalPric
+          +eCents)}                                                      
+      119                </dd>
+      120              </div>
+      121            </dl>
+
+⏺ All files written. Now let's run the tests and TypeScript check.
+
+⏺ Bash(cd "/Users/delmo/Desktop/kaizen-take-home (2) (1)" && npm test 2>&1)
+  ⎿  Error: Exit code 1
+
+     > tps-kaizenwheels@0.0.1 test
+     > node --import tsx/esm --test app/lib/__tests__/discounts.test.ts
+
+     ▶ hasHolidayInRange
+       ✔ Jan 21 strictly inside Jan 20–Jan 22 (1.568209ms)
+       ✔ starts on holiday day Jan 21 → false (0.930833ms)
+       ✔ ends on holiday day Jan 21 → false (0.381125ms)
+       ✔ Jan 22–Jan 24 — no holiday (0.556167ms)
+     … +51 lines (ctrl+o to expand)
+
+⏺ One test has a wrong assertion — the duration savings is correctly clamped to
+  baseTotalCents when the hourly rate is tiny, but the test expects the
+  unclamped value. Fixing the test.
+
+⏺ Update(app/lib/__tests__/discounts.test.ts)
+  ⎿  Added 7 lines, removed 5 lines
+       98    });
+       99  
+      100    test("both apply, duration saves more → duration wins", () =
+           > {
+      101 -    // Use low rate so holiday saves less                     
+      102 -    const lowRate = 500; // $5/hr                             
+      103 -    const hSavings = Math.round(lowRate * hours96 * 0.17); // 
+          -8160                                                          
+      104 -    const dSavings = 1000 * hours96; // 96000                 
+      101 +    // Use a rate where duration discount exceeds holiday disc
+          +ount but doesn't exceed base total                            
+      102 +    // rate=2000 ($20/hr), 96h: base=192000, duration=96000, h
+          +oliday=round(192000*0.17)=32640                               
+      103 +    const rate = 2000;                                        
+      104 +    const baseCents = rate * hours96; // 192000               
+      105 +    const dSavings = Math.min(1000 * hours96, baseCents); // 9
+          +6000                                                          
+      106 +    const hSavings = Math.round(baseCents * 0.17); // 32640   
+      107      assert.ok(dSavings > hSavings);
+      106 -    const result = calculateDiscount(dt("2025-01-20"), dt("202
+          -5-01-24"), lowRate, hours96);                                 
+      108 +    const result = calculateDiscount(dt("2025-01-20"), dt("202
+          +5-01-24"), rate, hours96);                                    
+      109      assert.equal(result.discountType, "duration");
+      110      assert.equal(result.savingsCents, dSavings);
+      111    });
+⏺ Bash(cd "/Users/delmo/Desktop/kaizen-take-home (2) (1)" && npm test 2>&1)
+  ⎿  > tps-kaizenwheels@0.0.1 test
+     > node --import tsx/esm --test app/lib/__tests__/discounts.test.ts
+     … +19 lines (ctrl+o to expand)
+
+⏺ 19/19 tests passing. Now let's run the TypeScript check.
+
+⏺ Bash(cd "/Users/delmo/Desktop/kaizen-take-home (2) (1)" && npm run ts 2>&1)
+  ⎿  > tps-kaizenwheels@0.0.1 ts
+     > tsc --noEmit
+
+⏺ Zero TypeScript errors. Done. Here's a summary of everything implemented:
+
+  6 files changed:
+
+  File: package.json
+  Change: Added test script using node --import tsx/esm
+  ────────────────────────────────────────
+  File: app/lib/discounts.ts
+  Change: New — HOLIDAYS, DiscountType, DiscountInfo, hasHolidayInRange,
+    hasDurationDiscount, calculateDiscount
+  ────────────────────────────────────────
+  File: app/lib/__tests__/discounts.test.ts
+  Change: New — 19 unit tests across all 3 functions
+  ────────────────────────────────────────
+  File: app/server/api.ts
+  Change: calculateTotalPrice now returns PriceQuote with discount: DiscountInfo
+  ────────────────────────────────────────
+  File: app/components/search/VehicleListItem.tsx
+  Change: Strikethrough rate for duration discount, green badge + estimated
+  total
+    when any discount applies
+  ────────────────────────────────────────
+  File: app/components/review/ReviewPage.tsx
+  Change: Subtotal + discount line shown when applicable; total uses
+    effectiveTotalPriceCents
+
+  Conflict resolution: Holiday wins on tie (savings equal). Price filter in
+  search still operates on raw hourly_rate_cents — discounts are display-only.
+
+✻ Cogitated for 2m 41s
+
+❯ give me a good smoke test plan on the UI for the discount feature behavior to 
+   validate the requirements                                                    
+
+⏺ Here's a focused smoke test plan covering every discount branch and the key
+  boundary conditions.
+
+  ---
+  Smoke Test Plan — Discount Feature
+
+  Setup: Use a vehicle with a known hourly rate (pick one from search results
+  and note its rate — call it R). All times are same-of-day unless noted.
+
+  ---
+  1. Holiday discount — valid
+
+  Dates: Jan 20 → Jan 22 (Jan 21 is strictly inside)
+  Duration: 48h (≤ 72h, so no duration discount)
+
+  Search card expects:
+  - No strikethrough on /hr rate
+  - Green badge: 17% Holiday Deal
+  - Est. total line: Est. $X total (save $Y) where Y = round(R × 48 × 0.17)
+
+  Review page expects:
+  - Subtotal row: R × 48
+  - Holiday Discount (17% off) row in green: −$Y
+  - Total Cost: R × 48 − Y
+
+  ---
+  2. Holiday boundary — starts on holiday day (no discount)
+
+  Dates: Jan 21 00:00 → Jan 23 00:00
+  Duration: 48h
+
+  Both pages expect: No badge, no discount rows, total = R × 48
+
+  ---
+  3. Holiday boundary — ends on holiday day (no discount)
+
+  Dates: Jan 19 00:00 → Jan 21 00:00
+  Duration: 48h
+
+  Both pages expect: No badge, no discount rows, total = R × 48
+
+  ---
+  4. Duration discount — just over threshold
+
+  Dates: Any 4-day range with no holiday inside (e.g. Jan 22 → Jan 26 — no
+  holidays in that span)
+  Duration: 96h (> 72h)
+
+  Search card expects:
+  - Strikethrough original /hr rate
+  - New /hr rate shown: R − $10.00
+  - Green badge: Multi-Day Discount
+  - Est. total: (R − 1000) × 96 cents
+
+  Review page expects:
+  - Subtotal: R × 96
+  - Multi-Day Discount ($10/hr off) in green: −$960.00
+  - Total Cost: (R − 1000) × 96
+
+  ---
+  5. Duration boundary — exactly 72h (no discount)
+
+  Dates: Any 3-day range with no holiday inside (e.g. Jan 22 12:00 → Jan 25
+  12:00)
+  Duration: 72h exactly
+
+  Both pages expect: No badge, no discount, total = R × 72
+
+  ---
+  6. Both apply — holiday saves more (holiday wins)
+
+  Dates: Jan 20 → Jan 24 (Jan 21 inside, 96h duration)
+  Use a vehicle with a high rate (R ≥ $10/hr, where round(R×96×0.17) > 1000×96)
+  At $100/hr (10000¢): holiday = round(10000×96×0.17) = $163,200¢; duration =
+  $96,000¢ → holiday wins
+
+  Both pages expect: 17% Holiday Deal / Holiday Discount (17% off), savings =
+  holiday amount
+
+  ---
+  7. Both apply — duration saves more (duration wins)
+
+  Dates: Jan 20 → Jan 24 (Jan 21 inside, 96h)
+  Use a vehicle with a lower rate where duration saves more
+  At $20/hr (2000¢): holiday = round(2000×96×0.17) = $32,640¢; duration =
+  $96,000¢ → duration wins
+
+  Both pages expect: Multi-Day Discount badge, strikethrough /hr, savings =
+  $960.00
+
+  ---
+  8. No discount
+
+  Dates: Jan 22 → Jan 24 (no holiday, 48h)
+
+  Both pages expect: Plain price display, no badge, no subtotal/discount rows,
+  total = R × 48
+
+  ---
+  9. Price filter still uses base rate (not discounted)
+
+  Pick dates that trigger holiday discount (Jan 20 → Jan 22). Set the max price
+  filter to exactly the vehicle's base rate. Verify the vehicle still appears —
+  confirming the filter operates on hourly_rate_cents, not the discounted rate.
+
+  ---
+  Quick cross-check table
+
+  ┌────────────┬─────────────┬────────────────┬───────────┬────────────────┐
+  │  Scenario  │    Badge    │ Strikethrough  │ Subtotal  │  Discount row  │
+  │            │             │      /hr       │    row    │                │
+  ├────────────┼─────────────┼────────────────┼───────────┼────────────────┤
+  │ Holiday    │ 17% Holiday │                │           │ Holiday        │
+  │ only       │  Deal       │ No             │ Yes       │ Discount (17%  │
+  │            │             │                │           │ off)           │
+  ├────────────┼─────────────┼────────────────┼───────────┼────────────────┤
+  │ Duration   │ Multi-Day   │                │           │ Multi-Day      │
+  │ only       │ Discount    │ Yes            │ Yes       │ Discount       │
+  │            │             │                │           │ ($10/hr off)   │
+  ├────────────┼─────────────┼────────────────┼───────────┼────────────────┤
+  │ Both,      │ 17% Holiday │                │           │ Holiday        │
+  │ holiday    │  Deal       │ No             │ Yes       │ Discount (17%  │
+  │ wins       │             │                │           │ off)           │
+  ├────────────┼─────────────┼────────────────┼───────────┼────────────────┤
+  │ Both,      │ Multi-Day   │                │           │ Multi-Day      │
+  │ duration   │ Discount    │ Yes            │ Yes       │ Discount       │
+  │ wins       │             │                │           │ ($10/hr off)   │
+  ├────────────┼─────────────┼────────────────┼───────────┼────────────────┤
+  │ Neither    │ None        │ No             │ No        │ No             │
+  └────────────┴─────────────┴────────────────┴───────────┴────────────────┘
+
+✻ Crunched for 29s
+
+❯ lets add these screenshots in a smoke_test dir to append when we commit these 
+   changes: 1) [Image #1] 2) [Image #2] 3) [Image #3] 4) [Image #4] 5) [Image   
+  #5] 6 & 7 shown here)[Image #6]                                               
+  ⎿  [Image #1]
+  ⎿  [Image #2]
+  ⎿  [Image #3]
+  ⎿  [Image #4]
+  ⎿  [Image #5]
+  ⎿  [Image #6]
+
+⏺ Let me check the image paths and set up the smoke_test directory.
+
+  Listed 1 directory (ctrl+o to expand)
+
+⏺ Bash(mkdir -p "/Users/delmo/Desktop/kaizen-take-home (2) (1)/smoke_test" && \
+      cp "/Users/delmo/.claude/image-cache/dd40a24a-436b-437e-8047-7fa485281627/
+      1.png" "/User…)
+  ⎿  01_holiday_discount_jan20_jan22.png
+     02_no_discount_starts_on_holiday_jan21_jan23.png
+     03_no_discount_ends_on_holiday_jan19_jan21.png
+     … +3 lines (ctrl+o to expand)
+
+⏺ All 6 screenshots are in place. Now let me commit everything together.
+
+⏺ Bash(cd "/Users/delmo/Desktop/kaizen-take-home (2) (1)" && git status && git
+      diff --stat)
+  ⎿  On branch master
+     Your branch is up to date with 'origin/master'.
+     … +21 lines (ctrl+o to expand)
+
+⏺ Bash(cd "/Users/delmo/Desktop/kaizen-take-home (2) (1)" && git log --oneline
+      -5)
+  ⎿  1c2e23b add PART2_PLAN.md and append conversation export to AI_LOGS.md
+     814bade add AI_LOGS.md conversation export
+     4cf0dc2 add PLAN.md documenting price filter fix approach
+     … +2 lines (ctrl+o to expand)
+
+⏺ Bash(cd "/Users/delmo/Desktop/kaizen-take-home (2) (1)" && \
+      git add app/lib/discounts.ts app/lib/__tests__/discounts.test.ts
+      app/server/api.ts app/components/review…)
+  ⎿  [master db078b7] implement holiday and duration discount feature with
+     UI and tests
+      12 files changed, 275 insertions(+), 5 deletions(-)
+     … +11 lines (ctrl+o to expand)
+
+⏺ Committed as db078b7. The smoke_test/ directory contains all 6 screenshots
+  named to match the scenario they cover:
+
+  File: 01_holiday_discount_jan20_jan22.png
+  What it validates: Holiday discount active — Jan 21 strictly inside
+  ────────────────────────────────────────
+  File: 02_no_discount_starts_on_holiday_jan21_jan23.png
+  What it validates: Boundary — starts on holiday, no discount
+  ────────────────────────────────────────
+  File: 03_no_discount_ends_on_holiday_jan19_jan21.png
+  What it validates: Boundary — ends on holiday, no discount
+  ────────────────────────────────────────
+  File: 04_duration_discount_jan22_jan26.png
+  What it validates: Duration discount active — 96h, no holiday
+  ────────────────────────────────────────
+  File: 05_no_discount_exactly_72h_jan22_jan25.png
+  What it validates: Boundary — exactly 72h, no discount
+  ────────────────────────────────────────
+  File: 06_conflict_resolution_jan20_jan24.png
+  What it validates: Both apply — duration wins for lower-rate vehicles, holiday
+
+    wins for Ford Mustang ($160/hr)
+
+✻ Baked for 53s
+
+❯ push it                                                                       
+
+⏺ Bash(cd "/Users/delmo/Desktop/kaizen-take-home (2) (1)" && git push)
+  ⎿  To https://github.com/delmonicho/kaizen-wheels-nicho.git
+        1c2e23b..db078b7  master -> master
+
+⏺ Pushed. 1c2e23b..db078b7 is now on origin/master.
+
+✻ Brewed for 7s
+
+❯ evaluate our tests, do they cover all holidays? Jan 21, Feb 12, Mar 04, May   
+  02, Jun 16, Jul 26,                                                           
+  Aug 03, Sep 01, Nov 05, Dec 18.  Also, have we added coverage with confidence 
+   that the discounts will appear on botht he search and checkout review pages? 
+⏺ Let me read the test file and relevant components to evaluate coverage before
+  designing a plan.
+
+⏺ Explore(Evaluate test coverage for discount feature)
+  ⎿  Done (4 tool uses · 27.4k tokens · 15s)
+  (ctrl+o to expand)
+
+⏺ Clear picture of the gaps. Let me write the plan.
+
+⏺ Updated plan
+  ⎿  /plan to preview
+  ⎿  User rejected Claude's plan:
+     ╭─────────────────────────────────────────────────────────────────────────╮
+     │ Plan: Fill Test Coverage Gaps — All Holidays + UI Contract              │
+     │                                                                         │
+     │ Context                                                                 │
+     │                                                                         │
+     │ Evaluation of the existing test suite found two gaps:                   │
+     │                                                                         │
+     │ 1. Holiday coverage: Only Jan 21 and Dec 18 are explicitly              │
+     │ isolated-tested in hasHolidayInRange. The remaining 8 holidays (Feb 12, │
+     │  Mar 04, May 02, Jun 16, Jul 26, Aug 03, Sep 01, Nov 05) have zero test │
+     │  coverage. All three boundary-condition tests (starts-on, ends-on,      │
+     │ same-day) also use only Jan 21.                                         │
+     │ 2. UI rendering confidence: No automated tests exist for                │
+     │ VehicleListItem or ReviewPage. The components render correctly          │
+     │ (verified by reading the code and smoke test screenshots), but the test │
+     │  suite gives no automated signal if the conditional rendering           │
+     │ regresses. Adding a React component test framework would violate the    │
+     │ "zero new installs" constraint, so instead we cover the data contract — │
+     │  verifying that calculateDiscount returns exactly the shape both        │
+     │ components consume for each discount type.                              │
+     │                                                                         │
+     │ ---                                                                     │
+     │ Critical File                                                           │
+     │                                                                         │
+     │ app/lib/__tests__/discounts.test.ts                                     │
+     │                                                                         │
+     │ ---                                                                     │
+     │ Changes                                                                 │
+     │                                                                         │
+     │ 1 — Replace ad-hoc hasHolidayInRange tests with a data-driven loop      │
+     │                                                                         │
+     │ Replace the current 8 individual tests in the hasHolidayInRange         │
+     │ describe block with a loop over all 10 holidays. For each holiday run   │
+     │ three assertions (strictly inside → true, start boundary → false, end   │
+     │ boundary → false). This yields 30 sub-tests covering every holiday      │
+     │ uniformly.                                                              │
+     │                                                                         │
+     │ const ALL_HOLIDAYS = [                                                  │
+     │   { month: 1,  day: 21, label: "Jan 21" },                              │
+     │   { month: 2,  day: 12, label: "Feb 12" },                              │
+     │   { month: 3,  day: 4,  label: "Mar 04" },                              │
+     │   { month: 5,  day: 2,  label: "May 02" },                              │
+     │   { month: 6,  day: 16, label: "Jun 16" },                              │
+     │   { month: 7,  day: 26, label: "Jul 26" },                              │
+     │   { month: 8,  day: 3,  label: "Aug 03" },                              │
+     │   { month: 9,  day: 1,  label: "Sep 01" },                              │
+     │   { month: 11, day: 5,  label: "Nov 05" },                              │
+     │   { month: 12, day: 18, label: "Dec 18" },                              │
+     │ ];                                                                      │
+     │                                                                         │
+     │ for (const { month, day, label } of ALL_HOLIDAYS) {                     │
+     │   const h = DateTime.fromObject({ year: 2025, month, day });            │
+     │   const prev = h.minus({ days: 1 });                                    │
+     │   const next = h.plus({ days: 1 });                                     │
+     │                                                                         │
+     │   test(`${label} strictly inside → true`, () =>                         │
+     │     assert.equal(hasHolidayInRange(prev, next), true));                 │
+     │                                                                         │
+     │   test(`${label} start boundary (range begins on holiday) → false`, ()  │
+     │ =>                                                                      │
+     │     assert.equal(hasHolidayInRange(h, next), false));                   │
+     │                                                                         │
+     │   test(`${label} end boundary (range ends on holiday) → false`, () =>   │
+     │     assert.equal(hasHolidayInRange(prev, h), false));                   │
+     │ }                                                                       │
+     │                                                                         │
+     │ Keep the existing cross-year and multi-holiday tests (they test logic   │
+     │ the loop doesn't cover).                                                │
+     │                                                                         │
+     │ 2 — Add UI contract tests for calculateDiscount                         │
+     │                                                                         │
+     │ Add a new describe("calculateDiscount UI contract") block that verifies │
+     │  the exact shape consumed by VehicleListItem and ReviewPage for each    │
+     │ discount branch:                                                        │
+     │                                                                         │
+     │ ┌─────────────┬──────────────┬──────────────────────────┬────────────── │
+     │ ────┐                                                                   │
+     │ │    Case     │ discountType │ effectiveTotalPriceCents │               │
+     │ savingsCents   │                                                        │
+     │ ├─────────────┼──────────────┼──────────────────────────┼────────────── │
+     │ ────┤                                                                   │
+     │ │ Holiday     │ "holiday"    │ base - round(base*0.17)  │               │
+     │ round(base*0.17) │                                                      │
+     │ │ only        │              │                          │               │
+     │     │                                                                   │
+     │ ├─────────────┼──────────────┼──────────────────────────┼────────────── │
+     │ ────┤                                                                   │
+     │ │ Duration    │ "duration"   │ base - 1000*h            │ 1000*h        │
+     │     │                                                                   │
+     │ │ only        │              │                          │               │
+     │     │                                                                   │
+     │ ├─────────────┼──────────────┼──────────────────────────┼────────────── │
+     │ ────┤                                                                   │
+     │ │ No discount │ null         │ base                     │ 0             │
+     │     │                                                                   │
+     │ └─────────────┴──────────────┴──────────────────────────┴────────────── │
+     │ ────┘                                                                   │
+     │                                                                         │
+     │ These tests assert the exact field values that the components read,     │
+     │ giving automated regression coverage for the UI data contract without   │
+     │ requiring a component test framework.                                   │
+     │                                                                         │
+     │ ---                                                                     │
+     │ Verification                                                            │
+     │                                                                         │
+     │ npm test    # all tests pass (expect ~38 total, up from 19)             │
+     │ npm run ts  # zero TypeScript errors                                    │
+     ╰─────────────────────────────────────────────────────────────────────────╯
+
+❯ write plan to PART3_REFACTOR_PLAN.md                                          
+
+⏺ Write(PART3_REFACTOR_PLAN.md)
+  ⎿  Wrote 76 lines to PART3_REFACTOR_PLAN.md
+      2 # Test Coverage Gap Plan
+      4 ## Context
+      6 Evaluation of the existing test suite found two gaps:
+      7 1. **Holiday coverage**: Only Jan 21 and Dec 18 are explicitly is
+        eb 12, Mar 04, May 02, Jun 16, Jul 26, Aug 03, Sep 01, Nov 05) ha
+        -on, ends-on, same-day) also use only Jan 21.dition tests (starts
+      8 
+        icleListItem` or `ReviewPage`. The components render correctly (v
+        test suite gives no automated signal if the conditional rendering
+         regresses. Adding a React com
+     … +90 lines (ctrl+o to expand)
+
+⏺ Written to PART3_REFACTOR_PLAN.md. Ready to execute when you say go.
+
+✻ Cogitated for 21s
+╭─── Claude Code v2.1.128 ─────────────────────────────────────────────────────╮
+│                                                    │ Tips for getting        │
+│                 Welcome back nicho!                │ started                 │
+│                                                    │ Run /init to create a … │
+│                       ▐▛███▜▌                      │ ─────────────────────── │
+│                      ▝▜█████▛▘                     │ What's new              │
+│                        ▘▘ ▝▝                       │ Added new `claude agen… │
+│ Sonnet 4.6 · Claude Pro · nicho.delmo@gmail.com's  │ Fast mode now uses Opu… │
+│ Organization                                       │ Plugins with a root-le… │
+│         ~/Desktop/kaizen-take-home (2) (1)         │ /release-notes for more │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+❯ /clear                                                                        
+  ⎿  (no content)
+
+❯ /effort                                                                       
+  ⎿  Set effort level to high: Comprehensive implementation with extensive
+     testing and documentation · burns fastest — medium handles most tasks
+
+❯ execute /Users/delmo/Desktop/kaizen-take-home (2) (1)/PART3_REFACTOR_PLAN.md  
+
+⏺ Let me read the refactor plan first.
+
+  Read 1 file (ctrl+o to expand)
+
+⏺ Now let me read the current test file.
+
+  Read 1 file (ctrl+o to expand)
+
+⏺ Now I have everything I need. I'll rewrite the test file according to the
+  plan.
+
+⏺ Write(app/lib/__tests__/discounts.test.ts)
+  ⎿  Added 60 lines, removed 57 lines
+
+⏺ Now run the tests to verify.
+
+⏺ Bash(cd "/Users/delmo/Desktop/kaizen-take-home (2) (1)" && npm test 2>&1)
+  ⎿  > tps-kaizenwheels@0.0.1 test
+     > node --import tsx/esm --test app/lib/__tests__/discounts.test.ts
+     … +43 lines (ctrl+o to expand)
+
+⏺ 45/45 pass. The plan's table listed 46 but the plan's own code section has 7
+  calculateDiscount tests (7+34+4 = 45) — the count in the table had an
+  off-by-one; the actual code spec is correct. Let me also run the TypeScript
+  check.
+
+⏺ Bash(cd "/Users/delmo/Desktop/kaizen-take-home (2) (1)" && npm run ts 2>&1)
+  ⎿  > tps-kaizenwheels@0.0.1 ts
+     > tsc --noEmit
+
+⏺ Zero TypeScript errors.
+
+  Done. The refactor is complete:
+
+  - hasHolidayInRange: 34 tests — 30 data-driven (all 10 holidays × 3 boundary
+  assertions each) + 4 retained edge-case tests (clear range, cross-year,
+  multi-holiday, sub-day start).
+  - hasDurationDiscount: 4 tests unchanged.
+  - calculateDiscount: 7 tests — tests 1 & 2 now assert
+  effectiveTotalPriceCents; the fake tie-break test replaced with the meaningful
+   72h exact-boundary test; the clamping test strengthened to precise equality
+  rather than >= 0.
+
+  45 tests, all green, zero TS errors (the plan's table said 46 — it had an
+  internal count error in the calculateDiscount row, but the code spec it
+  provided was self-consistent at 7 tests for that block).
+
+✻ Sautéed for 1m 27s
